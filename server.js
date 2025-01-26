@@ -31,6 +31,7 @@ app.use('/public', publicRouter)
 app.use(express.static('upload_data'));
 
 app.get('/helth-check', (req, res) =>{res.send("Helth check done")})
+app.get('/', (req, res) =>{res.send("Hello Surya")})
 
 app.listen(PORT, () =>{
     console.log("Server is runing is port", PORT)
