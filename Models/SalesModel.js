@@ -6,9 +6,6 @@ const conditionEnum = filterService.condition;
 
 salesModel.upsertSales = async (body) => {
     const connection = await db.getConnection();
-
-    console.log("body", body);
-
     const updateSql = `UPDATE sales SET c_id = ?, p_id = ?, p_desc = ?, qty = ?, s_price = ?, unit = ?, status = ?, s_date = ? WHERE id = ?`;
     const insertSql = `INSERT INTO sales (c_id, p_id, p_desc, qty, s_price, unit, status, s_date, created_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
 
@@ -73,7 +70,6 @@ salesModel.getSales = async (reqData) => {
 
         const [rows] = await connection.query(listSql);
         const [[count]] = await connection.query(countSql);
-        console.log("rows", rows);
         const response = { rows, ...count };
         return response;
     } finally {

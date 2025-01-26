@@ -44,7 +44,6 @@ adminController.upsertUser = async (req, res, next) => {
 
             if(!req.params.id){
                 const isExitUser = await adminModel.getUserByEmail(email);
-                console.log("isExitUser",isExitUser, isExitUser)
                 if ( isExitUser) {
                     return res.send(getErrorObject(409, 'User already exists'));
                 }

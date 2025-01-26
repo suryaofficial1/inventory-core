@@ -22,7 +22,6 @@ export const singleFileUploader = (uploadPath, prefix, variableName, fileSize) =
 };
 
 export const multiFileUploader = (uploadPath, prefix, variableName, fileSize, maxImages) => {
-    console.log("uploadPath", uploadPath, prefix, variableName, fileSize, maxImages);
 
     let storage = multer.diskStorage({
         destination: (req, file, callback) => {
