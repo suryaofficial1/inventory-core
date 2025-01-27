@@ -15,7 +15,7 @@ authController.updateUser = async (req, res, next) => {
             process.env.USER_IMAGE,
             `user`,
             "profile",
-            1024 * 1024 * 10 
+            1024 * 1024 * 10
         );
 
         upload(req, res, async (err) => {
@@ -24,8 +24,8 @@ authController.updateUser = async (req, res, next) => {
                 return res.status(500).json({ message: 'File upload failed', error: err });
             }
 
-            const { name, mobile, email, status } = req.body;
-            const error = validationService.validateRequired({ name,  mobile, email, status}, ['name', 'mobile','email', 'status']);
+            const { name, mobile, email } = req.body;
+            const error = validationService.validateRequired({ name, mobile, email }, ['name', 'mobile', 'email']);
             if (error) {
                 return res.send(getErrorObject(400, 'Bad request', error));
             }
@@ -41,16 +41,42 @@ authController.updateUser = async (req, res, next) => {
                 name: name,
                 email: email,
                 mobile: mobile,
-                status: status,
                 profile: fileName || '',
-                id: req.params.id 
+                id: req.params.id
             };
-             const result = await authModel.updateUser(reqBody);
+            const result = await authModel.updateUser(reqBody);
             return res.send(getUserSuccessResponse(result));
         });
     } catch (err) {
         console.error(err);
         res.send(getErrorObject(500, "Internal Server Error", err));
+    }
+};
+authController.updatePassword = async (req, res, next) => {
+    try {
+
+        const { currentPassword, newPassword } = req.body
+        const error = validationService.validateRequired({ currentPassword, newPassword }, ['currentPassword', 'newPassword']);
+        if (error) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const user = await authModel.getUserById(req.params.id);
+        if (!user) {
+            return res.send(getErrorObject(404, 'User not found'));
+        }
+        const isMatch = await bcrypt.compare(req.body.currentPassword, user.password);
+        if (!isMatch) {
+            return res.send(getErrorObject(401, 'Current Password is incorrect'));
+        }
+        const reqBody = {
+            id: req.params.id,
+            password: await bcrypt.hash(req.body.newPassword, 10)
+        }
+        await authModel.updatePassword(reqBody);
+        return res.send(getSuccessObject());
+    } catch (err) {
+        console.error(err);
+        res.send(getErrorObject(500, "Internal Server Error in updatePassword", err));
     }
 };
 
@@ -73,6 +99,8 @@ const getUserSuccessResponse = (user) => {
         profile: user.profile
     });
 }
+
+
 authController.login = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.body, ['email', 'password']);

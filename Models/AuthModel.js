@@ -39,17 +39,37 @@ authModel.getUserByEmail = async (email) => {
         connection.release();
     }
 };
+authModel.getUserById = async (id) => {
+    const connection = await db.getConnection();
+    try {
+        const sql = `select id, email, password from user_master where id = ?`
+        const [[result]] = await connection.query(sql, [id]);
+        return result;
+    } finally {
+        connection.release();
+    }
+};
+authModel.updatePassword = async ({ password, id }) => {
+    const connection = await db.getConnection();
+    try {
+        const sql = `update user_master set password = ? where id = ?`
+        await connection.query(sql, [password, id]);
+        return true;
+    } finally {
+        connection.release();
+    }
+};
 
 
 authModel.updateUser = async (body) => {
     const connection = await db.getConnection();
-    const updateSql = `update user_master set name = ?, email = ?, mobile = ?,profile =?,  status = ? where id = ?`;
+    const updateSql = `update user_master set name = ?, email = ?, mobile = ?,profile =? where id = ?`;
     const getSql = `select um.id, um.name, um.email, um.password, um.mobile, um.profile, r.name role, d.name department, um.status from user_master um
         inner join role r on r.id = um.role_id
         inner join department d on d.id = um.dep_id
         where um.id = ?`
     try {
-        await connection.query(updateSql, [body.name, body.email, body.mobile, body.profile, body.status, body.id]);
+        await connection.query(updateSql, [body.name, body.email, body.mobile, body.profile, body.id]);
         const [[result]] = await connection.query(getSql, [body.id]);
         return result;
     } finally {

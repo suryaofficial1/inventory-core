@@ -137,7 +137,7 @@ adminModel.getDepartments = async (email) => {
         const sql = `select id , name from department`;
         const [result] = await connection.query(sql, []);
         return result;
-
+        
     } finally {
         connection.release();
     }
