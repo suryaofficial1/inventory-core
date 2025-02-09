@@ -154,4 +154,4 @@ adminModel.getRoles = async (email) => {
     }
 };
 
-export default adminModel;
+export default adminModel; 

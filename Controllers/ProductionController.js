@@ -1,86 +1,72 @@
-import salesModel from "../Models/SalesModel.js";
 import validationService from "../service/validation.service.js";
 import { getErrorObject, getSuccessObject } from "../utils/responseUtil.js";
+import productionModel from "../Models/ProductionModel.js";
 
-const salesController = {};
 
-salesController.upsertSales = async (req, res) => {
+const productionController = {};
+
+productionController.upsertProduction = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.body, [
             "customer",
             "product",
             "pDesc",
-            "salesDate",
             "qty",
-            "salesPrice",
             "unit",
+            "manufacturingDate",
+            "operatorName",
+            "comment",
             "status"
         ]);
         if (error) return res.send(getErrorObject(400, 'Bad request', error));
+
         const reqObj = {
             customer: req.body.customer,
             product: req.body.product,
             pDesc: req.body.pDesc,
-            salesDate: req.body.salesDate,
             qty: req.body.qty,
-            salesPrice: req.body.salesPrice,
             unit: req.body.unit,
+            manufacturingDate: req.body.manufacturingDate,
+            operatorName: req.body.operatorName,
+            comment: req.body.comment,
             status: req.body.status,
             id: req.params.id ? req.params.id : null
         }
-        const results = await salesModel.upsertSales(reqObj);
+        const results = await productionModel.upsertProduction(reqObj);
         return res.send(getSuccessObject(results));
     } catch (err) {
         console.error(err);
-        res.send(getErrorObject(500, "Internal Server Error", err));
+        res.send(getErrorObject(500, "Internal Server Error upsertProduction", err));
     }
 };
 
-salesController.getSales = async (req, res) => {
+productionController.getProductions = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.query, ['page', 'per_page']);
         if (error) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
-        const result = await salesModel.getSales(req.query);
+        const result = await productionModel.getProductions(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
         console.error(err);
-        res.send(getErrorObject(500, "Internal Server Error", err));
-    }
-};
-salesController.getCustomers = async (req, res) => {
-    try {
-        const result = await salesModel.getCustomers();
-        return res.send(getSuccessObject(result));
-    } catch (err) {
-        console.error(err);
-        res.send(getErrorObject(500, "Internal Server Error", err));
-    }
-};
-salesController.getProducts = async (req, res) => {
-    try {
-        const result = await salesModel.getProducts();
-        return res.send(getSuccessObject(result));
-    } catch (err) {
-        console.error(err);
-        res.send(getErrorObject(500, "Internal Server Error", err));
+        res.send(getErrorObject(500, "Internal Server Error getProductions", err));
     }
 };
 
-salesController.deleteSales = async (req, res) => {
+productionController.deleteProduction = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.params, ['id']);
         if (error) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
-        await salesModel.deleteSales(req.params.id);
+        await productionModel.deleteProduction(req.params.id);
         return res.send(getSuccessObject());
     } catch (err) {
         console.error(err);
-        res.send(getErrorObject(500, "Internal Server Error", err));
+        res.send(getErrorObject(500, "Internal Server Error deleteProduction", err));
     }
 };
 
 
-export default salesController;
+export default productionController;

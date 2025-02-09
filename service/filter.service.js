@@ -12,6 +12,9 @@ const filterService = {
         IS_PRESENT: 'IS_PRESENT',
         JSON_CONTAINS: 'JSON_CONTAINS',
         JSON_CONTAINS_NUMBER: 'JSON_CONTAINS_NUMBER',
+        GREATER_THAN_EQUAL: 'GREATER_THAN_EQUAL',
+        LESS_THAN_EQUAL: 'LESS_THAN_EQUAL',
+
     }
 };
 
@@ -30,10 +33,10 @@ filterService.generateFilterSQL = (reqData, filterConfig) => {
             let condition = '';
             switch (item.condition) {
                 case filterService.condition.EQ:
-                    condition += item.column + '=' + escape(input)
+                    condition += item.column + ' = ' + escape(input)
                     break;
                 case filterService.condition.NEQ:
-                    condition += item.column + '!=' + escape(input)
+                    condition += item.column + ' != ' + escape(input)
                     break;
                 case filterService.condition.START_WITH:
                     condition += item.column + ` like ${escape(input + '%')}`;
@@ -52,7 +55,17 @@ filterService.generateFilterSQL = (reqData, filterConfig) => {
                     break;
                 case filterService.condition.JSON_CONTAINS_NUMBER:
                     if (reqData[item.inputKey] != 0) {
-                        condition += `JSON_CONTAINS(${item.column}, '${input}')`;
+                        condition += ` JSON_CONTAINS(${item.column} , '${input}')`;
+                    }
+                    break;
+                case filterService.condition.LESS_THAN_EQUAL:
+                    if (reqData[item.inputKey] != 0) {
+                        condition += item.column +  ' <= ' + escape(input)
+                    }
+                    break;
+                case filterService.condition.GREATER_THAN_EQUAL:
+                    if (reqData[item.inputKey] != 0) {
+                        condition += item.column + ' >= ' + escape(input)
                     }
                     break;
                 case filterService.condition.IS_PRESENT:
