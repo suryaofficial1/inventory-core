@@ -42,7 +42,7 @@ authModel.getUserByEmail = async (email) => {
 authModel.getUserById = async (id) => {
     const connection = await db.getConnection();
     try {
-        const sql = `select id, email, password from user_master where id = ?`
+        const sql = `select um.id, um.email, um.password, r.name role from user_master um left join role r on um.role_id = r.id where um.id = ?`
         const [[result]] = await connection.query(sql, [id]);
         return result;
     } finally {

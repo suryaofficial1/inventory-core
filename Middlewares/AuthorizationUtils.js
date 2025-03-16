@@ -1,4 +1,6 @@
 import jwt from 'jsonwebtoken';
+import authModel from '../Models/AuthModel.js';
+import { getErrorObject } from '../utils/responseUtil.js';
 
 /**
  * middleware to authorize request with JWT Token, if token is not present or invalid give 401 else call next.
@@ -26,11 +28,11 @@ export default async function authorize(req, res, next) {
         return true;
       } else {
         // UNAUTHORIZED
-        res.status(401).send({ error: 'invalid token' });
+        res.send(getErrorObject(401, "invalid token"))
       }
     } else {
+      res.send(getErrorObject(401, "invalid token"))
       // UNAUTHORIZED
-      res.status(401).send({ error: 'token is missing' });
     }
     return false
   } catch (error) {
@@ -66,3 +68,23 @@ export function extractToken(req) {
   return null
 }
 
+
+/**
+ * perform authorization for Super admin role
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+export async function authorizeSuperAdmin(req, res, next) {
+  try {
+    const { user } = req
+    var result = await authModel.getUserById(user.id);
+    if (result.role === "Admin") {
+      next();	// then preform next action given
+    } else
+      return res.sendStatus(403);
+  } catch (err) {
+    console.error('Error in authorizer', err);
+    res.send(getErrorObject(500, "Internal Server Error", err));
+  }
+}

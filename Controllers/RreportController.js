@@ -5,23 +5,23 @@ import { getErrorObject, getSuccessObject } from "../utils/responseUtil.js";
 const reportController = {};
 
 
-reportController.getSalseOverview = async (req, res) => {
+reportController.getSalesOverview = async (req, res) => {
     try {
-        const result = await reportModel.getSalseOverview(req.query);
+        const result = await reportModel.getSalesOverview(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
         console.error(err);
-        res.send(getErrorObject(500, "Internal Server Error getSalseOverview", err));
+        res.send(getErrorObject(500, "Internal Server Error getSalesOverview", err));
     }
 };
 
-reportController.getPurchaseReprts = async (req, res) => {
+reportController.getPurchaseReports = async (req, res) => {
     try {
-        const result = await reportModel.getPurchaseReprts(req.query);
+        const result = await reportModel.getPurchaseReports(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
         console.error(err);
-        res.send(getErrorObject(500, "Internal Server Error getPurchaseReprts", err));
+        res.send(getErrorObject(500, "Internal Server Error getPurchaseReports", err));
     }
 };
 

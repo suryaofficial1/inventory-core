@@ -18,7 +18,7 @@ publicModel.getSuppliers = async () => {
 publicModel.getCustomers = async () => {
     const connection = await db.getConnection();
     try {
-        const listSql = `select id, name, c_code cCode from customer ORDER BY id DESC`;
+        const listSql = `select id, name from customer  ORDER BY id DESC`;
         const [rows] = await connection.query(listSql);
         return rows;
     } finally {
@@ -28,7 +28,7 @@ publicModel.getCustomers = async () => {
 publicModel.getProducts = async () => {
     const connection = await db.getConnection();
     try {
-        const listSql = `select id, name, p_code pCode from product ORDER BY id DESC`;
+        const listSql = `select id, name from product ORDER BY id DESC`;
         const [rows] = await connection.query(listSql);
         return rows;
     } finally {

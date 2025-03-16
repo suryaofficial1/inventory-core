@@ -5,11 +5,11 @@ const adminModel = {};
 const conditionEnum = filterService.condition;
 
 const user_config = [
-    { inputKey: "name", column: 'um.name', condition: conditionEnum.EQ },
-    // { inputKey: "cCode", column: 'c_code', condition: conditionEnum.EQ },
-    // { inputKey: "location", column: 'location', condition: conditionEnum.CONTAIN },
-    // { inputKey: "gstin", column: 'gstin', condition: conditionEnum.CONTAIN },
+    { inputKey: "name", column: 'um.name', condition: conditionEnum.START_WITH },
+    { inputKey: "email", column: 'um.email', condition: conditionEnum.CONTAIN },
+    { inputKey: "mobile", column: 'um.mobile', condition: conditionEnum.EQ },
 ]
+
 adminModel.getUsers = async (reqData) => {
     const connection = await db.getConnection();
     const filter = filterService.generateFilterSQL(reqData, user_config);
@@ -20,7 +20,7 @@ adminModel.getUsers = async (reqData) => {
 
     const countSql = `select count(*) as total from user_master um
         inner join role r on r.id = um.role_id
-        inner join department d on d.id = um.dep_id ${whereCondition} ${filter}`
+        inner join department d on d.id = um.dep_id  ${whereCondition}  ${filter}`
     const listSql = `SELECT um.id, um.name, um.email, um.mobile, um.profile, JSON_ARRAYAGG( JSON_OBJECT('id', r.id, 'name', r.name) ) AS role, JSON_ARRAYAGG( JSON_OBJECT('id', d.id, 'name', d.name) ) AS department, um.status
                 FROM 
                     user_master um
@@ -28,10 +28,12 @@ adminModel.getUsers = async (reqData) => {
                     role r ON r.id = um.role_id
                 INNER JOIN 
                     department d ON d.id = um.dep_id
+                     ${whereCondition} ${filter}
                 GROUP BY 
                     um.id, um.name, um.email, um.mobile, um.profile, um.status
-                ${whereCondition} ${filter} ORDER BY um.id DESC limit ${index},${pageSize}`
+                ORDER BY um.id DESC limit ${index}, ${pageSize}`
     try {
+        console.log("sql ->", listSql)
         const [rows] = await connection.query(listSql)
         const [[count]] = await connection.query(countSql)
         const response = { rows, ...count }
@@ -137,7 +139,7 @@ adminModel.getDepartments = async (email) => {
         const sql = `select id , name from department`;
         const [result] = await connection.query(sql, []);
         return result;
-        
+
     } finally {
         connection.release();
     }

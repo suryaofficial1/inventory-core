@@ -63,7 +63,7 @@ productionModel.getProductions = async (reqData) => {
                             LEFT JOIN customer c ON p.c_id = c.id
                             LEFT JOIN product pd ON p.p_id = pd.id  ${whereCondition} ${filter}`;
         const listSql = `SELECT pr.id, JSON_OBJECT('id', c.id, 'name', c.name) AS customer,
-                            JSON_OBJECT('id', pd.id, 'name', pd.name, 'pCode', pd.p_code) AS product,
+                            JSON_OBJECT('id', pd.id, 'name', pd.name) AS product,
                              pr.p_desc AS pDesc, pr.qty, pr.unit, pr.operatorName, pr.comment, pr.status , pr.m_date AS manufacturingDate
                             FROM production pr 
                             LEFT JOIN customer c ON pr.c_id = c.id

@@ -1,7 +1,7 @@
 CREATE TABLE `customer` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `name` VARCHAR(500)  NULL,
-  `c_code` VARCHAR(500)  NULL,
+  `v_code` VARCHAR(500)  NULL,
   `address` VARCHAR(500)  NULL,
   `location` VARCHAR(500)  NULL,
   `contact` VARCHAR(500)  NULL,

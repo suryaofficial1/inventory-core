@@ -4,30 +4,12 @@ import filterService from "../service/filter.service.js";
 const productModel = {};
 const conditionEnum = filterService.condition;
 
-// productModel.upsertProduct = async (body) => {
-//     const connection = await db.getConnection();
-
-//     const updateSql = `update product set name = ?, description = ?, qty = ?, price = ?, unit = ?, status = ? where id = ?`;
-//     const insertSql = `insert into product (name, description, qty, price, unit, status, created_on) values (?,?,?,?,?,?,?,now())`;
-//     try {
-//         if (body.id) {
-//             const [result] = await connection.query(updateSql, [body.name, body.description, body.qty, body.price, body.unit, body.status, body.id]);
-//             return result;
-//         }
-//         const [{ insertId: productId }] = await connection.query(insertSql, [body.name, body.description, body.qty, body.price, body.unit, body.status]);
-//         await connection.query(`update product set p_code = ? where id = ?`, [productId + body.name, productId])
-//         return result;
-//     } finally {
-//         connection.release();
-//     }
-// };
 
 productModel.upsertProduct = async (body) => {
     const connection = await db.getConnection();
 
     const updateSql = `UPDATE product SET name = ?, description = ?, qty = ?, price = ?, unit = ?, status = ? WHERE id = ?`;
     const insertSql = `INSERT INTO product (name, description, qty, price, unit, status, created_on) VALUES (?, ?, ?, ?, ?, ?, NOW())`;
-    const updatePCodeSql = `UPDATE product SET p_code = ? WHERE id = ?`;
 
     try {
         if (body.id) {
@@ -52,30 +34,27 @@ productModel.upsertProduct = async (body) => {
             ]);
 
             const productId = insertResult.insertId;
-            const pCode = `${productId}${body.name}`;
-            await connection.query(updatePCodeSql, [pCode, productId]);
-
-            return { insertId: productId, pCode };
+            return { insertId: productId };
         }
     } finally {
         connection.release();
     }
 };
 
-const supplier_config = [
+const product_config = [
     { inputKey: "name", column: 'name', condition: conditionEnum.CONTAIN },
 ]
 
 productModel.getProducts = async (reqData) => {
     const connection = await db.getConnection();
-    const filter = filterService.generateFilterSQL(reqData, supplier_config);
-    const whereCondition = filter.trim().length > 0 ? ' WHERE ' : '';
+    const filter = filterService.generateFilterSQL(reqData, product_config);
+    let finalFilter = filter ? ` where  ${filter} ` : '';
 
     let pageSize = reqData.per_page;
     let index = (reqData.page - 1) * pageSize;
     try {
-        const countSql = `select count(*) as total from product ${whereCondition} ${filter}`
-        const listSql = `select id, name, p_code pCode, description, qty, price, unit, status from product ${whereCondition} ${filter} ORDER BY id DESC limit ${index},${pageSize}`
+        const countSql = `select count(*) as total from product ${finalFilter}`
+        const listSql = `select id, name, description, qty, price, unit, status from product  ${finalFilter} ORDER BY id DESC limit ${index},${pageSize}`
 
         const [rows] = await connection.query(listSql)
         const [[count]] = await connection.query(countSql)
@@ -90,8 +69,8 @@ productModel.getProducts = async (reqData) => {
 productModel.deleteProduct = async (id) => {
     const connection = await db.getConnection();
     try {
-        const sql = `delete from product where id = ?`
-        const [result] = await connection.query(sql, [id]);
+        const deleteSql = `delete from product where id = ?`
+        const [result] = await connection.query(deleteSql, [id]);
         return result;
     } finally {
         connection.release();

@@ -6,10 +6,11 @@ const customerController = {};
 
 customerController.upsertCustomer = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, ["name", "address", "location", "contact", "gstin", "status"]);
+        const error = validationService.validateRequired(req.body, ["name", "vCode", "address", "location", "contact", "gstin", "status"]);
         if (error) return res.send(getErrorObject(400, 'Bad request', error));
         const reqObj = {
             name: req.body.name,
+            vCode: req.body.vCode,
             address: req.body.address,
             location: req.body.location,
             contact: req.body.contact,

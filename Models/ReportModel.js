@@ -8,129 +8,85 @@ const conditionEnum = filterService.condition;
 const sales_config = [
     { inputKey: "cId", column: 'c.id', condition: conditionEnum.EQ },
     { inputKey: "pId", column: 'p.id', condition: conditionEnum.EQ },
-    { inputKey: "from", column: 's.s_date', condition: conditionEnum.GREATER_THAN_EQUAL},
-    { inputKey: "to", column: 's.s_date', condition: conditionEnum.LESS_THAN_EQUAL},
+    { inputKey: "from", column: 's.s_date', condition: conditionEnum.GREATER_THAN_EQUAL },
+    { inputKey: "to", column: 's.s_date', condition: conditionEnum.LESS_THAN_EQUAL },
 ];
 
-reportModel.getSalseOverview = async (reqData) => {
+reportModel.getSalesOverview = async (reqData) => {
     const connection = await db.getConnection();
-    
-    // Generate dynamic WHERE condition from filters
-    const filter = filterService.generateFilterSQL(reqData, sales_config);
-    const whereCondition = filter.trim().length > 0 ? ` WHERE ${filter}` : ''; 
-
-    console.log("whereCondition", whereCondition);
 
     try {
-        const coreMetrics = `SELECT COUNT(DISTINCT s.p_id) AS orders, SUM(s.s_price) AS sales FROM sales s
-                                LEFT JOIN product p ON s.p_id = p.id
-                               LEFT JOIN customer c ON s.c_id = c.id 
-                                ${whereCondition}`;
+        const whereCondition = filterService.generateFilterSQL(reqData, sales_config);
+        const whereClause = whereCondition ? ` WHERE ${whereCondition}` : '';
+        const listSql = `SELECT  s.id, JSON_OBJECT('id', c.id, 'name', c.name) AS customer,
+                            JSON_OBJECT('id', p.id, 'name', p.name) AS product,
+                            s.qty, 
+                            s.s_price AS price, 
+                            s.unit, 
+                            DATE_FORMAT(s.s_date, '%Y/%m/%d') AS date,
+                            sum(s.qty) totalQty,
+                            sum(s.s_price) totalPrice
+                        FROM sales s
+                            LEFT JOIN customer c ON c.id = s.c_id
+                            LEFT JOIN product p ON p.id = s.p_id
+                            ${whereClause} 
+                            GROUP BY s.id, c.name, p.name, s.unit, s.s_date
+                            ORDER BY s.id DESC`;
+        const totalSql = `SELECT SUM(s.qty) AS totalQty, SUM(s.s_price) AS totalPrice 
+                                FROM sales s
+                                 LEFT JOIN customer c ON c.id = s.c_id
+                                 LEFT JOIN product p ON p.id = s.p_id
+                                 ${whereClause}`;
 
-        const allSallingSql = `SELECT s.id, c.name AS cName, p.name AS pName, s.p_desc, s.qty, s.s_price, s.s_date, s.unit, s.status
-                               FROM sales s 
-                               LEFT JOIN product p ON s.p_id = p.id
-                               LEFT JOIN customer c ON s.c_id = c.id 
-                               ${whereCondition}
-                               ORDER BY s.s_date DESC`;
-
-        const productSelByQty = `SELECT p.name, SUM(s.qty) AS quantity
-                                 FROM sales s
-                                 LEFT JOIN product p ON s.p_id = p.id
-                                 LEFT JOIN customer c ON s.c_id = c.id 
-                                 ${whereCondition}
-                                 GROUP BY s.p_id, p.name
-                                 ORDER BY quantity DESC LIMIT 6`;
-
-        const productSeleByUnit = `SELECT s.unit, SUM(s.qty) AS quantity 
-                                   FROM sales s 
-                                   LEFT JOIN product p ON s.p_id = p.id
-                                   LEFT JOIN customer c ON s.c_id = c.id 
-                                   ${whereCondition}
-                                   GROUP BY s.unit 
-                                   ORDER BY quantity DESC`;
-
-        const totalSalesProduct = `SELECT s.s_date AS date, p.name, SUM(s.qty) AS qty, SUM(s.s_price) AS total
-                                   FROM sales s
-                                   LEFT JOIN product p ON s.p_id = p.id
-                                   LEFT JOIN customer c ON s.c_id = c.id 
-                                   ${whereCondition}
-                                   GROUP BY s.s_date, p.name
-                                   ORDER BY s.s_date DESC, total DESC`;
-
-        // Execute queries
-        const [overView] = await connection.query(coreMetrics);
-        const [prdSellByQty] = await connection.query(productSelByQty);
-        const [prdSellByUnit] = await connection.query(productSeleByUnit);
-        const [totalSallProduct] = await connection.query(totalSalesProduct);
-        const [allSallData] = await connection.query(allSallingSql);
-
-        // Return all reports
-        return { overView, prdSellByQty, prdSellByUnit, totalSallProduct, allSallData };
+        const [rows] = await connection.query(listSql);
+        const [[total]] = await connection.query(totalSql);
+        return { rows, total };
+    } catch (error) {
+        console.error("Error fetching sales overview:", error);
+        throw error;
     } finally {
         connection.release();
     }
 };
 
 
+
 const purchase_config = [
     { inputKey: "sId", column: 's.id', condition: conditionEnum.EQ },
     { inputKey: "pId", column: 'p.id', condition: conditionEnum.EQ },
-    { inputKey: "from", column: 'pr.p_date', condition: conditionEnum.GREATER_THAN_EQUAL},
-    { inputKey: "to", column: 'pr.p_date', condition: conditionEnum.LESS_THAN_EQUAL},
+    { inputKey: "from", column: 'pr.p_date', condition: conditionEnum.GREATER_THAN_EQUAL },
+    { inputKey: "to", column: 'pr.p_date', condition: conditionEnum.LESS_THAN_EQUAL },
 ];
 
-reportModel.getPurchaseReprts = async (reqData) => {
+reportModel.getPurchaseReports = async (reqData) => {
     const connection = await db.getConnection();
-    const filter = filterService.generateFilterSQL(reqData, purchase_config);
-    const whereCondition = filter.trim().length > 0 ? ` WHERE ${filter}` : '';
-
-    const coreMetrics = `SELECT COUNT(DISTINCT pr.p_id) AS product_purchase, SUM(pr.price) AS purchaseValue FROM purchase pr
-                                LEFT JOIN product p ON pr.p_id = p.id
-                               LEFT JOIN supplier s ON pr.s_id = s.id 
-                                ${whereCondition}`;
-    const allPurchaseSql = `SELECT pr.id, s.name AS sName, p.name AS pName, pr.description, pr.qty, pr.price, pr.p_date, pr.unit, pr.status
-                                FROM purchase pr 
-                                LEFT JOIN product p ON pr.p_id = p.id
-                                LEFT JOIN supplier s ON pr.s_id = s.id  
-                                ${whereCondition}
-                                ORDER BY pr.p_date DESC`;
-    const productPurchaseByQty = `SELECT p.name, SUM(pr.qty) AS quantity
-                                FROM purchase pr
-                                LEFT JOIN product p ON pr.p_id = p.id
-                                LEFT JOIN supplier s ON pr.s_id = s.id  
-                                ${whereCondition}
-                                GROUP BY pr.p_id, p.name
-                                ORDER BY quantity DESC LIMIT 6`;
-    const productPurchaseByUnit = `SELECT pr.unit, SUM(pr.qty) AS quantity 
-                                FROM purchase pr 
-                                LEFT JOIN product p ON pr.p_id = p.id
-                                LEFT JOIN supplier s ON pr.s_id = s.id  
-                                ${whereCondition}
-                                GROUP BY pr.unit 
-                                ORDER BY quantity DESC`;
-    const allPurchaseProduct = `SELECT pr.p_date date, p.name, SUM(pr.qty) AS qty, SUM(pr.price) AS total
-                                FROM purchase pr
-                                LEFT JOIN product p ON pr.p_id = p.id
-                                LEFT JOIN supplier s ON pr.s_id = s.id   
-                                ${whereCondition}
-                                GROUP BY pr.p_date, p.name
-                                ORDER BY pr.p_date DESC, total DESC`;
-
     try {
-
-        const [overView] = await connection.query(coreMetrics);
-        const [prdPurchaseByQty] = await connection.query(productPurchaseByQty);
-        const [prdPurchaseByUnit] = await connection.query(productPurchaseByUnit);
-        const [totalPurchaseProduct] = await connection.query(allPurchaseProduct);
-        const [allPurchaseData] = await connection.query(allPurchaseSql);
-
-        // Return all reports
-        return { overView, prdPurchaseByQty, prdPurchaseByUnit, totalPurchaseProduct, allPurchaseData };
+        const whereCondition = filterService.generateFilterSQL(reqData, purchase_config);
+        const whereClause = whereCondition ? ` WHERE ${whereCondition}` : '';
+        const listSql = `SELECT pr.id, pr.invoiceNo, pr.b_num bNumber,   JSON_OBJECT('id', s.id, 'name', s.name) AS supplier, 
+                                 JSON_OBJECT('id', p.id, 'name', p.name) AS product, 
+                                 p.qty, p.price, p.unit, p.status, 
+                                 DATE_FORMAT(pr.p_date, '%Y/%m/%d') AS date
+                        FROM purchase pr
+                                LEFT JOIN supplier s ON pr.s_id = s.id
+                                LEFT JOIN product p ON pr.p_id = p.id
+                                ${whereClause} 
+                                GROUP BY pr.id, s.name, p.name, pr.unit, pr.p_date
+                                ORDER BY pr.id DESC`;
+        const totalSql = `SELECT SUM(pr.qty) AS totalQty, SUM(pr.price) AS totalPrice 
+                                FROM purchase pr
+                                  LEFT JOIN supplier s ON pr.s_id = s.id
+                                LEFT JOIN product p ON pr.p_id = p.id
+                                 ${whereClause}`;
+        const [rows] = await connection.query(listSql);
+        const [[total]] = await connection.query(totalSql);
+        return { rows, total };
+    } catch (error) {
+        console.error("Error fetching sales overview:", error);
+        throw error;
     } finally {
         connection.release();
     }
-
 }
 
 
