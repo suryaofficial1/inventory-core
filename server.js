@@ -15,6 +15,7 @@ import materialsRouter from "./Routes/MaterialsRoute.js";
 import reportRouter from "./Routes/ReportRoutes.js";
 import path from 'path';
 import fs from 'fs';
+import logger from "./core/app-loger.js";
 
 dotenv.config();
 
@@ -37,8 +38,8 @@ const PORT = process.env.PORT || 8080;
 
 
 app.use('/auth', router),
-    app.use('/admin', adminRouter),
-    app.use('/product', productRouter)
+app.use('/admin', adminRouter),
+app.use('/product', productRouter)
 app.use('/supplier', supplierRouter)
 app.use('/customer', customerRouter)
 app.use('/sales', salesRouter)
@@ -63,9 +64,17 @@ app.get('*', function (req, res) {
     res.sendFile(filePath);
 })
 
-app.get('/helth-check', (req, res) => { res.send("Helth check done") })
-//app.get('/', (req, res) =>{res.send("Hello Surya")})
+app.get('/health-check', (req, res) => { res.send("Health check done") })
 
-app.listen(PORT, () => {
-    console.log("Server is runing is port", PORT)
-})
+const server = app.listen(PORT, () => {
+    logger.info(`Server started on port ${PORT}`);
+});
+
+server.on("error", (err) => {
+    logger.error(`Server Error: ${err.message}`);
+});
+
+process.on("uncaughtException", (err) => {
+    logger.error(`Uncaught Exception: ${err.stack || err.message}`);
+    process.exit(1); // Exit to avoid unexpected behavior
+});

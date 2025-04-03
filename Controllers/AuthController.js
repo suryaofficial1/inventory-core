@@ -5,6 +5,7 @@ import validationService from "../service/validation.service.js";
 import { getErrorObject, getSuccessObject } from "../utils/responseUtil.js";
 import { sendEmail } from "../utils/SendEmail.js";
 import { singleFileUploader } from "../service/singleUploader.js";
+import { AppError, errorMessage } from "../Middlewares/ErrorHandler.js";
 
 
 const authController = {};
@@ -25,10 +26,8 @@ authController.updateUser = async (req, res, next) => {
             }
 
             const { name, mobile, email } = req.body;
-            const error = validationService.validateRequired({ name, mobile, email }, ['name', 'mobile', 'email']);
-            if (error) {
-                return res.send(getErrorObject(400, 'Bad request', error));
-            }
+            validationService.validateRequired({ name, mobile, email }, ['name', 'mobile', 'email']);
+
 
             let fileName;
             if (typeof req.body.profile === 'string') {
@@ -56,10 +55,8 @@ authController.updatePassword = async (req, res, next) => {
     try {
 
         const { currentPassword, newPassword } = req.body
-        const error = validationService.validateRequired({ currentPassword, newPassword }, ['currentPassword', 'newPassword']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired({ currentPassword, newPassword }, ['currentPassword', 'newPassword']);
+
         const user = await authModel.getUserById(req.params.id);
         if (!user) {
             return res.send(getErrorObject(404, 'User not found'));
@@ -84,7 +81,7 @@ const getUserSuccessResponse = (user) => {
     if (!user) {
         return getErrorObject(404, 'User not found');
     }
-    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '1d' });
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '30d' });
 
     return getSuccessObject({
         isLoggedIn: true,
@@ -101,16 +98,15 @@ const getUserSuccessResponse = (user) => {
 }
 
 
-authController.login = async (req, res) => {
+authController.login = async (req, res, next) => {
     try {
-        const error = validationService.validateRequired(req.body, ['email', 'password']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.body, ['email', 'password']);
+
         const user = await authModel.getUserByEmail(req.body.email);
         if (!user) {
-            return res.send(getErrorObject(404, 'User not found'));
+            throw new AppError(errorMessage.resourceNotFound, 409, 'User not found');
         }
+
         const isMatch = await bcrypt.compare(req.body.password, user.password);
         if (!isMatch) {
             return res.send(getErrorObject(401, 'Invalid credentials'));
@@ -119,15 +115,13 @@ authController.login = async (req, res) => {
 
     } catch (err) {
         console.log(err)
+        next();
         res.send(getErrorObject(500, "Internal Server Error", err));
     }
 }
 authController.sendOtp = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, ['email']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.body, ['email']);
         const user = await authModel.getUserByEmail(req.body.email);
         if (!user.length) {
             return res.send(getErrorObject(404, 'User not found'));
@@ -155,10 +149,7 @@ authController.sendOtp = async (req, res) => {
 }
 authController.verifyOtp = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, ['email', 'otp']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.body, ['email', 'otp']);
         const verifyCode = await authModel.getOtpEmail(req.body.email);
         if (!verifyCode) {
             return res.send(getErrorObject(404, 'Otp not found!'));
@@ -176,10 +167,7 @@ authController.verifyOtp = async (req, res) => {
 
 authController.getUsers = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.params, ['id']);
         const result = await authModel.getUsers(req.params.id);
         return res.send(getSuccessObject(result));
 

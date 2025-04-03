@@ -6,7 +6,7 @@ const salesController = {};
 
 salesController.upsertSales = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, [
+        validationService.validateRequired(req.body, [
             "customer",
             "product",
             "invoiceNo",
@@ -17,7 +17,6 @@ salesController.upsertSales = async (req, res) => {
             "unit",
             "status"
         ]);
-        if (error) return res.send(getErrorObject(400, 'Bad request', error));
         const reqObj = {
             customer: req.body.customer,
             product: req.body.product,
@@ -40,10 +39,8 @@ salesController.upsertSales = async (req, res) => {
 
 salesController.getSales = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['page', 'per_page']);
+
         const result = await salesModel.getSales(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -54,10 +51,8 @@ salesController.getSales = async (req, res) => {
 
 salesController.deleteSales = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.params, ['id']);
+
         await salesModel.deleteSales(req.params.id);
         return res.send(getSuccessObject());
     } catch (err) {
@@ -71,10 +66,8 @@ salesController.deleteSales = async (req, res) => {
 
 salesController.getSalesReturnList = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['page', 'per_page']);
+
         const result = await salesModel.getSalesReturnList(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -86,10 +79,8 @@ salesController.getSalesReturnList = async (req, res) => {
 
 salesController.getSalesByInvoiceNo = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['invoiceNo']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['invoiceNo']);
+
         const result = await salesModel.getSalesByInvoiceNo(req.query.invoiceNo);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -100,10 +91,8 @@ salesController.getSalesByInvoiceNo = async (req, res) => {
 
 salesController.getSalesReturnByInvoiceNo = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['invoiceNo']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['invoiceNo']);
+
         const result = await salesModel.getSalesReturnByInvoiceNo(req.query.invoiceNo);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -115,10 +104,8 @@ salesController.getSalesReturnByInvoiceNo = async (req, res) => {
 
 salesController.deleteSalesDetails = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.params, ['id']);
+
         await salesModel.deleteSalesDetails(req.params.id);
         return res.send(getSuccessObject());
     } catch (err) {
@@ -130,7 +117,7 @@ salesController.deleteSalesDetails = async (req, res) => {
 
 salesController.upsertSalesReturn = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, [
+        validationService.validateRequired(req.body, [
             "salesId",
             "customer",
             "product",
@@ -141,7 +128,6 @@ salesController.upsertSalesReturn = async (req, res) => {
             "unit",
             "status"
         ]);
-        if (error) return res.send(getErrorObject(400, 'Bad request', error));
         const isExitSalesDetails = await salesModel.getSalesByInvoiceNo(req.body.invoiceNo);
         if (!isExitSalesDetails.length) {
             return res.send(getErrorObject(404, 'Sales details not found'));
@@ -168,10 +154,8 @@ salesController.upsertSalesReturn = async (req, res) => {
 
 salesController.deleteSalesReturn = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.params, ['id']);
+
         await salesModel.deleteSalesReturn(req.params.id);
         return res.send(getSuccessObject());
     } catch (err) {

@@ -5,6 +5,7 @@ import { getErrorObject, getSuccessObject } from "../utils/responseUtil.js";
 
 import bcrypt from "bcrypt";
 import { sendEmail } from "../utils/SendEmail.js";
+import logger from "../core/app-loger.js";
 
 
 
@@ -24,31 +25,27 @@ adminController.upsertUser = async (req, res, next) => {
         upload(req, res, async (err) => {
             if (err) {
                 console.error(err);
+                logger.error('Error in upload profile photo- ', err);
                 return res.status(500).json({ message: 'File upload failed', error: err });
             }
 
             // Validate required fields
             // const { body } = req;
             const { name, role, department, mobile, email, password, status } = req.body;
-            const error = validationService.validateRequired({ name, role, department, mobile, email, status}, ['name','role', 'department' , 'mobile','email', 'status']);
-            if (error) {
-                return res.send(getErrorObject(400, 'Bad request', error));
-            }
-            if(!req.params.id && !password){
+            validationService.validateRequired({ name, role, department, mobile, email, status }, ['name', 'role', 'department', 'mobile', 'email', 'status']);
+            if (!req.params.id && !password) {
                 console.log(" password not found")
-                const error = validationService.validateRequired({ password}, ['password']);
-                if (error) {
-                    return res.send(getErrorObject(400, 'Bad request', error));
-                }  
+                logger.info(" password not found")
+                validationService.validateRequired({ password }, ['password']);
             }
 
-            if(!req.params.id){
+            if (!req.params.id) {
                 const isExitUser = await adminModel.getUserByEmail(email);
-                if ( isExitUser) {
+                if (isExitUser) {
                     return res.send(getErrorObject(409, 'User already exists'));
                 }
             }
-           
+
             // Prepare the request body for database insertion
             let fileName;
             if (req.params.id && typeof req.body.profile === 'string') {
@@ -67,15 +64,14 @@ adminController.upsertUser = async (req, res, next) => {
                 depId: department,
                 status: status,
                 profile: fileName || '',
-                password:  password ? await bcrypt.hash(password, 10) : null,
+                password: password ? await bcrypt.hash(password, 10) : null,
                 id: req.params.id ? req.params.id : null
             };
-              await adminModel.upsertUser(reqBody);
+            await adminModel.upsertUser(reqBody);
             return res.send(getSuccessObject());
         });
     } catch (err) {
-        console.error(err);
-        res.send(getErrorObject(500, "Internal Server Error", err));
+        next()
     }
 };
 
@@ -83,10 +79,8 @@ adminController.upsertUser = async (req, res, next) => {
 
 adminController.sendOtp = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, ['email']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.body, ['email']);
+        
         const user = await adminModel.getUserByEmail(req.body.email);
         if (!user.length) {
             return res.send(getErrorObject(404, 'User not found'));
@@ -115,10 +109,8 @@ adminController.sendOtp = async (req, res) => {
 
 adminController.getUsers = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['page', 'per_page']);
+        
         const result = await adminModel.getUsers(req.query);
         
         return res.send(getSuccessObject(result));
@@ -131,10 +123,8 @@ adminController.getUsers = async (req, res) => {
 
 adminController.deleteUser = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.params, ['id']);
+        
         const result = await adminModel.deleteUser(req.params.id);
         return res.send(getSuccessObject(result));
 

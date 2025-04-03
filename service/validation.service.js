@@ -1,3 +1,4 @@
+import { AppError, errorMessage } from "../Middlewares/ErrorHandler.js";
 
 const validationService = {}
 
@@ -13,19 +14,37 @@ const responseStream = {
     send: console.log,
     status: (code) => ({ send: console.log }),
 };
-validationService.validateRequired = (request, param, next) => {
+// validationService.validateRequired = (request, param, next) => {
+//     let error = [];
+//     param.forEach(element => {
+//         if (request[element] == undefined || request[element] == 'undefined' ||
+//             (typeof request[element] == "string" && request[element].trim() == "")) {
+//             error.push(element + " is required")
+//         }
+//     });
+//     if (error.length > 0) {
+//         return error;
+//     }
+
+// }
+
+validationService.validateRequired = (request, param, throwError=true) => {
+
     let error = [];
     param.forEach(element => {
-        if (request[element] == undefined || request[element] == 'undefined' ||
+        if(request[element] == undefined || request[element] == 'undefined' ||
             (typeof request[element] == "string" && request[element].trim() == "")) {
-            error.push(element + " is required")
-        }
+                error.push(element + " is required")
+            }
     });
-    if (error.length > 0) {
-        return error;
+    if(throwError && error.length) {
+        throw new AppError(errorMessage.validationError, 400, errorMessage.badRequest, error);
     }
-
+    return error;
 }
+
+
+
 
 validationService.validateAtleastOneRequired = (request, param) => {
 

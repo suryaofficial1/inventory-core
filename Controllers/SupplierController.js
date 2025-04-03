@@ -10,8 +10,7 @@ const supplierController = {};
 
 supplierController.upsertSupplier = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, ["name", "vendorCode", "address", "location", "contact", "gstin", "status"]);
-        if (error) return res.send(getErrorObject(400, 'Bad request', error));
+        validationService.validateRequired(req.body, ["name", "vendorCode", "address", "location", "contact", "gstin", "status"]);
         const reqObj = {
             name: req.body.name,
             vendorCode: req.body.vendorCode,
@@ -33,10 +32,8 @@ supplierController.upsertSupplier = async (req, res) => {
 
 supplierController.getSuppliers = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['page', 'per_page']);
+
         const result = await supplierModel.getSuppliers(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -47,10 +44,7 @@ supplierController.getSuppliers = async (req, res) => {
 
 supplierController.deleteSupplier = async (req, res) => {
     try {
-        const error = validationService.validateRequired({ id: req.params.id }, ['id']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired({ id: req.params.id }, ['id']);
         await supplierModel.deleteSupplier(req.params.id);
         return res.send(getSuccessObject());
     } catch (err) {

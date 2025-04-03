@@ -154,8 +154,8 @@ salesModel.upsertSalesReturn = async (body) => {
         } else {
             const [insertResult] = await connection.query(insertSql, [
                 body.salesId,
-                body.customer,
                 body.product,
+                body.customer,
                 body.invoiceNo,
                 body.qty,
                 body.salesPrice,

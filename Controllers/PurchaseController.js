@@ -6,7 +6,7 @@ const purchaseController = {};
 
 purchaseController.upsertPurchase = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, [
+        validationService.validateRequired(req.body, [
             "supplier",
             "product",
             "invoiceNo",
@@ -19,7 +19,6 @@ purchaseController.upsertPurchase = async (req, res) => {
             "purchaseDate",
             "expiryDate",
         ]);
-        if (error) return res.send(getErrorObject(400, 'Bad request', error));
         const reqObj = {
             supplier: req.body.supplier,
             product: req.body.product,
@@ -46,10 +45,8 @@ purchaseController.upsertPurchase = async (req, res) => {
 
 purchaseController.getPurchaseList = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['page', 'per_page']);
+
         const result = await purchaseModel.getPurchaseList(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -62,10 +59,8 @@ purchaseController.getPurchaseList = async (req, res) => {
 
 purchaseController.getPurchaseReturnList = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['page', 'per_page']);
+
         const result = await purchaseModel.getPurchaseReturnList(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -77,10 +72,8 @@ purchaseController.getPurchaseReturnList = async (req, res) => {
 
 purchaseController.getPurchaseByInvoiceNo = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['invoiceNo']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['invoiceNo']);
+
         const result = await purchaseModel.getPurchaseByInvoiceNo(req.query.invoiceNo);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -91,10 +84,8 @@ purchaseController.getPurchaseByInvoiceNo = async (req, res) => {
 
 purchaseController.getPurchaseReturnByInvoiceNo = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['invoiceNo']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['invoiceNo']);
+
         const result = await purchaseModel.getPurchaseReturnByInvoiceNo(req.query.invoiceNo);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -106,10 +97,8 @@ purchaseController.getPurchaseReturnByInvoiceNo = async (req, res) => {
 
 purchaseController.deletePurchaseDetails = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.params, ['id']);
+
         await purchaseModel.deletePurchaseDetails(req.params.id);
         return res.send(getSuccessObject());
     } catch (err) {
@@ -123,7 +112,7 @@ purchaseController.deletePurchaseDetails = async (req, res) => {
 
 purchaseController.upsertPurchaseReturn = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, [
+        validationService.validateRequired(req.body, [
             "purchaseId",
             "supplier",
             "product",
@@ -134,9 +123,8 @@ purchaseController.upsertPurchaseReturn = async (req, res) => {
             "price",
             "unit",
         ]);
-        if (error) return res.send(getErrorObject(400, 'Bad request', error));
         const isExitPurchaseDetails = await purchaseModel.getPurchaseByInvoiceNo(req.body.invoiceNo);
-        if(!isExitPurchaseDetails.length){
+        if (!isExitPurchaseDetails.length) {
             return res.send(getErrorObject(404, 'Purchase details not found'));
         }
         const reqObj = {
@@ -161,10 +149,8 @@ purchaseController.upsertPurchaseReturn = async (req, res) => {
 
 purchaseController.deletePurchaseReturn = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.params, ['id']);
+
         await purchaseModel.deletePurchaseReturn(req.params.id);
         return res.send(getSuccessObject());
     } catch (err) {

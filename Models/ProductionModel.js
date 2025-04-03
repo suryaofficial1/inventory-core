@@ -7,8 +7,10 @@ const conditionEnum = filterService.condition;
 
 productionModel.upsertProduction = async (body) => {
     const connection = await db.getConnection();
-    const updateSql = `UPDATE production SET c_id = ?, p_id = ?, p_desc = ?, qty= ?, unit = ?, operatorName= ? , comment= ?, status = ?, m_date = ? WHERE id = ?`;
-    const insertSql = `INSERT INTO production (c_id, p_id, p_desc, qty, unit, operatorName, comment, status, m_date, created_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
+    const materialsStr = JSON.stringify(body.materials);
+
+    const updateSql = `UPDATE production SET c_id = ?, p_id = ?, p_desc = ?, qty= ?, unit = ?, operatorName = ? , materials = ? , mqty = ? , mPrice = ? , rqty = ? , rPrice = ? , lqty = ? , lPrice = ?, status = ?, m_date = ? WHERE id = ?`;
+    const insertSql = `INSERT INTO production (c_id, p_id, p_desc, qty, unit, operatorName, materials, mqty, mPrice, rqty, rPrice, lqty, lPrice, status, m_date, created_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
 
     try {
         if (body.id) {
@@ -19,7 +21,13 @@ productionModel.upsertProduction = async (body) => {
                 body.qty,
                 body.unit,
                 body.operatorName,
-                body.comment,
+                materialsStr,
+                body.mqty,
+                body.mPrice,
+                body.rqty,
+                body.rPrice,
+                body.lqty,
+                body.lPrice,
                 body.status,
                 body.manufacturingDate,
                 body.id,
@@ -33,7 +41,13 @@ productionModel.upsertProduction = async (body) => {
                 body.qty,
                 body.unit,
                 body.operatorName,
-                body.comment,
+                materialsStr,
+                body.mqty,
+                body.mPrice,
+                body.rqty,
+                body.rPrice,
+                body.lqty,
+                body.lPrice,
                 body.status,
                 body.manufacturingDate,
             ]);
@@ -63,8 +77,8 @@ productionModel.getProductions = async (reqData) => {
                             LEFT JOIN customer c ON p.c_id = c.id
                             LEFT JOIN product pd ON p.p_id = pd.id  ${whereCondition} ${filter}`;
         const listSql = `SELECT pr.id, JSON_OBJECT('id', c.id, 'name', c.name) AS customer,
-                            JSON_OBJECT('id', pd.id, 'name', pd.name) AS product,
-                             pr.p_desc AS pDesc, pr.qty, pr.unit, pr.operatorName, pr.comment, pr.status , pr.m_date AS manufacturingDate
+                            JSON_OBJECT('id', pd.id, 'name', pd.name, 'qty', pd.qty, 'unit', pd.unit) AS product,
+                             pr.p_desc AS pDesc, pr.qty, pr.unit, pr.operatorName, pr.materials, pr.mqty, pr.mPrice, pr.rqty, pr.rPrice, pr.lqty, pr.lPrice, pr.status, pr.m_date AS manufacturingDate
                             FROM production pr 
                             LEFT JOIN customer c ON pr.c_id = c.id
                             LEFT JOIN product pd ON pr.p_id = pd.id

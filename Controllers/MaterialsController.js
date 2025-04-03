@@ -8,7 +8,7 @@ const materialsController = {};
 materialsController.upsertMaterial = async (req, res) => {
     try {
 
-        const error = validationService.validateRequired(req.body, [
+        validationService.validateRequired(req.body, [
             "materials",
             "mqty",
             "mPrice",
@@ -18,7 +18,6 @@ materialsController.upsertMaterial = async (req, res) => {
             "lPrice",
             "status"
         ]);
-        if (error) return res.send(getErrorObject(400, 'Bad request', error));
 
         const reqObj = {
             materials: req.body.materials,
@@ -41,10 +40,8 @@ materialsController.upsertMaterial = async (req, res) => {
 
 materialsController.getMaterials = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.query, ['page', 'per_page']);
+        
         const result = await materialsModel.getMaterials(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -55,10 +52,8 @@ materialsController.getMaterials = async (req, res) => {
 
 materialsController.deleteMaterial = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id']);
-        if (error) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
+        validationService.validateRequired(req.params, ['id']);
+        
         await materialsModel.deleteMaterial(req.params.id);
         return res.send(getSuccessObject());
     } catch (err) {

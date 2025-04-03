@@ -67,7 +67,7 @@ purchaseModel.getPurchaseList = async (reqData) => {
                             LEFT JOIN supplier s ON p.s_id = s.id
                             LEFT JOIN product pd ON p.p_id = pd.id ${whereCondition} ${filter}`;
         const listSql = `SELECT p.id, invoiceNo, b_num bNumber,  JSON_OBJECT('id', s.id, 'name', s.name) AS supplier, 
-                            JSON_OBJECT('id', pd.id, 'name', pd.name) AS product, 
+                            JSON_OBJECT('id', pd.id, 'name', pd.name ,'qty', pd.qty, 'unit', pd.unit) AS product, 
                             p.description,  p.qty, p.price, p.unit, p.status, p.p_date AS purchaseDate, e_date as expiryDate
                         FROM purchase p
                         LEFT JOIN  supplier s ON p.s_id = s.id
