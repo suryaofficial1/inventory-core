@@ -6,7 +6,11 @@ const productController = {};
 
 productController.upsertProduct = async (req, res) => {
     try {
-        validationService.validateRequired(req.body, ["name", "description", "qty", "price", "unit", "status"]);
+        const error = validationService.validateRequired(req.body, ["name", "description", "qty", "price", "unit", "status"]);
+
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
         const reqObj = {
             name: req.body.name,
             description: req.body.description,
@@ -26,7 +30,10 @@ productController.upsertProduct = async (req, res) => {
 
 productController.getProducts = async (req, res) => {
     try {
-        validationService.validateRequired(req.query, ['page', 'per_page']);
+        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
 
         const result = await productModel.getProducts(req.query);
         return res.send(getSuccessObject(result));
@@ -38,7 +45,10 @@ productController.getProducts = async (req, res) => {
 
 productController.deleteProduct = async (req, res) => {
     try {
-        validationService.validateRequired(req.params, ['id']);
+        const error = validationService.validateRequired(req.params, ['id']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
 
         await productModel.deleteProduct(req.params.id);
         return res.send(getSuccessObject());

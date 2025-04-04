@@ -6,7 +6,11 @@ const customerController = {};
 
 customerController.upsertCustomer = async (req, res) => {
     try {
-        validationService.validateRequired(req.body, ["name", "vCode", "address", "location", "contact", "gstin", "status"]);
+        const error = validationService.validateRequired(req.body, ["name", "vCode", "address", "location", "contact", "gstin", "status"]);
+
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
         const reqObj = {
             name: req.body.name,
             vCode: req.body.vCode,
@@ -28,8 +32,11 @@ customerController.upsertCustomer = async (req, res) => {
 
 customerController.getCustomers = async (req, res) => {
     try {
-        validationService.validateRequired(req.query, ['page', 'per_page']);
-        
+        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+
         const result = await customerModel.getCustomers(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
@@ -40,8 +47,11 @@ customerController.getCustomers = async (req, res) => {
 
 customerController.deleteCustomer = async (req, res) => {
     try {
-        validationService.validateRequired({ id: req.params.id }, ['id']);
-        
+        const error = validationService.validateRequired({ id: req.params.id }, ['id']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+
         await customerModel.deleteCustomer(req.params.id);
         return res.send(getSuccessObject());
     } catch (err) {

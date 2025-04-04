@@ -26,7 +26,10 @@ authController.updateUser = async (req, res, next) => {
             }
 
             const { name, mobile, email } = req.body;
-            validationService.validateRequired({ name, mobile, email }, ['name', 'mobile', 'email']);
+            const error = validationService.validateRequired({ name, mobile, email }, ['name', 'mobile', 'email']);
+            if (error.length) {
+                return res.send(getErrorObject(400, 'Bad request', error));
+            }
 
 
             let fileName;
@@ -55,7 +58,10 @@ authController.updatePassword = async (req, res, next) => {
     try {
 
         const { currentPassword, newPassword } = req.body
-        validationService.validateRequired({ currentPassword, newPassword }, ['currentPassword', 'newPassword']);
+        const error = validationService.validateRequired({ currentPassword, newPassword }, ['currentPassword', 'newPassword']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
 
         const user = await authModel.getUserById(req.params.id);
         if (!user) {
@@ -100,7 +106,10 @@ const getUserSuccessResponse = (user) => {
 
 authController.login = async (req, res, next) => {
     try {
-        validationService.validateRequired(req.body, ['email', 'password']);
+        const error = validationService.validateRequired(req.body, ['email', 'password']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
 
         const user = await authModel.getUserByEmail(req.body.email);
         if (!user) {
@@ -121,7 +130,10 @@ authController.login = async (req, res, next) => {
 }
 authController.sendOtp = async (req, res) => {
     try {
-        validationService.validateRequired(req.body, ['email']);
+        const error = validationService.validateRequired(req.body, ['email']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
         const user = await authModel.getUserByEmail(req.body.email);
         if (!user.length) {
             return res.send(getErrorObject(404, 'User not found'));
@@ -149,7 +161,10 @@ authController.sendOtp = async (req, res) => {
 }
 authController.verifyOtp = async (req, res) => {
     try {
-        validationService.validateRequired(req.body, ['email', 'otp']);
+        const error = validationService.validateRequired(req.body, ['email', 'otp']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
         const verifyCode = await authModel.getOtpEmail(req.body.email);
         if (!verifyCode) {
             return res.send(getErrorObject(404, 'Otp not found!'));
@@ -167,7 +182,10 @@ authController.verifyOtp = async (req, res) => {
 
 authController.getUsers = async (req, res) => {
     try {
-        validationService.validateRequired(req.params, ['id']);
+        const error = validationService.validateRequired(req.params, ['id']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
         const result = await authModel.getUsers(req.params.id);
         return res.send(getSuccessObject(result));
 

@@ -7,7 +7,7 @@ const productionController = {};
 
 productionController.upsertProduction = async (req, res) => {
     try {
-        validationService.validateRequired(req.body, [
+        const error = validationService.validateRequired(req.body, [
             "customer",
             "product",
             "pDesc",
@@ -55,7 +55,10 @@ productionController.upsertProduction = async (req, res) => {
 
 productionController.getProductions = async (req, res) => {
     try {
-        validationService.validateRequired(req.query, ['page', 'per_page']);
+        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
 
         const result = await productionModel.getProductions(req.query);
         return res.send(getSuccessObject(result));
@@ -67,7 +70,10 @@ productionController.getProductions = async (req, res) => {
 
 productionController.deleteProduction = async (req, res) => {
     try {
-        validationService.validateRequired(req.params, ['id']);
+        const error = validationService.validateRequired(req.params, ['id']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
 
         await productionModel.deleteProduction(req.params.id);
         return res.send(getSuccessObject());

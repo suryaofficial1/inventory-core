@@ -82,9 +82,8 @@ export async function authorizeSuperAdmin(req, res, next) {
     if (result.role === "Admin") {
       next();	// then preform next action given
     } else
-      return res.sendStatus(403);
+      return res.send(getErrorObject(403, "You are not authorized to perform this action"));
   } catch (err) {
-    console.error('Error in authorizer', err);
     res.send(getErrorObject(500, "Internal Server Error", err));
   }
 }

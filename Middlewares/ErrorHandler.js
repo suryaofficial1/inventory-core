@@ -1,4 +1,4 @@
-import logger from "../core/app-loger.js";
+import logger from "../core/app-logger.js";
 import { getErrorObject } from "../utils/responseUtil.js";
 
 export const errorMessage = {
@@ -16,20 +16,16 @@ class ErrorHandler {
     async handleError(error, responseStream) {
         if (error instanceof AppError) {
             if (error.httpCode !== 404) {
-                logger.error("Error Handler: ", error);
+                logger.error(`Error Handler: ${error}`);
             }
             responseStream.send(getErrorObject(error.httpCode, error.description, error.data));
-        } else if (error instanceof UserAccountDeactivatedError) {
-            logger.error("Error Handler: ", error);
-            responseStream.status(409).send(getErrorObject(409, "User account deleted"));
         } else {
-            logger.error("Error Handler: ", error);
-            responseStream.send(getErrorObject(500, "Internal Server Error"));
+            responseStream.send(getErrorObject(500, "Internal Server Error", error));
         }
     }
 
     handleUncaughtError(error) {
-        logger.error("Uncaught Error:", error);
+        logger.error(`Uncaught Error: ${error}`);
     }
 }
 

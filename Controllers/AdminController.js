@@ -4,8 +4,8 @@ import validationService from "../service/validation.service.js";
 import { getErrorObject, getSuccessObject } from "../utils/responseUtil.js";
 
 import bcrypt from "bcrypt";
+import logger from "../core/app-logger.js";
 import { sendEmail } from "../utils/SendEmail.js";
-import logger from "../core/app-loger.js";
 
 
 
@@ -25,18 +25,23 @@ adminController.upsertUser = async (req, res, next) => {
         upload(req, res, async (err) => {
             if (err) {
                 console.error(err);
-                logger.error('Error in upload profile photo- ', err);
+                logger.error(`Error in upload profile photo- ${err}`);
                 return res.status(500).json({ message: 'File upload failed', error: err });
             }
 
             // Validate required fields
             // const { body } = req;
             const { name, role, department, mobile, email, password, status } = req.body;
-            validationService.validateRequired({ name, role, department, mobile, email, status }, ['name', 'role', 'department', 'mobile', 'email', 'status']);
+            const error = validationService.validateRequired({ name, role, department, mobile, email, status }, ['name', 'role', 'department', 'mobile', 'email', 'status']);
+            if (error.length) {
+                return res.send(getErrorObject(400, 'Bad request', error));
+            }
             if (!req.params.id && !password) {
-                console.log(" password not found")
                 logger.info(" password not found")
-                validationService.validateRequired({ password }, ['password']);
+                const error = validationService.validateRequired({ password }, ['password']);
+                if (error.length) {
+                    return res.send(getErrorObject(400, 'Bad request', error));
+                }
             }
 
             if (!req.params.id) {
@@ -79,8 +84,11 @@ adminController.upsertUser = async (req, res, next) => {
 
 adminController.sendOtp = async (req, res) => {
     try {
-        validationService.validateRequired(req.body, ['email']);
-        
+        const error = validationService.validateRequired(req.body, ['email']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+
         const user = await adminModel.getUserByEmail(req.body.email);
         if (!user.length) {
             return res.send(getErrorObject(404, 'User not found'));
@@ -109,10 +117,13 @@ adminController.sendOtp = async (req, res) => {
 
 adminController.getUsers = async (req, res) => {
     try {
-        validationService.validateRequired(req.query, ['page', 'per_page']);
-        
+        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+
         const result = await adminModel.getUsers(req.query);
-        
+
         return res.send(getSuccessObject(result));
 
     } catch (err) {
@@ -123,8 +134,11 @@ adminController.getUsers = async (req, res) => {
 
 adminController.deleteUser = async (req, res) => {
     try {
-        validationService.validateRequired(req.params, ['id']);
-        
+        const error = validationService.validateRequired(req.params, ['id']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+
         const result = await adminModel.deleteUser(req.params.id);
         return res.send(getSuccessObject(result));
 

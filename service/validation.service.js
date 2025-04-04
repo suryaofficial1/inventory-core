@@ -37,8 +37,9 @@ validationService.validateRequired = (request, param, throwError=true) => {
                 error.push(element + " is required")
             }
     });
-    if(throwError && error.length) {
-        throw new AppError(errorMessage.validationError, 400, errorMessage.badRequest, error);
+    if(throwError && error.length) { 
+         return error;       
+        
     }
     return error;
 }

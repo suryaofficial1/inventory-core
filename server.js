@@ -15,7 +15,7 @@ import materialsRouter from "./Routes/MaterialsRoute.js";
 import reportRouter from "./Routes/ReportRoutes.js";
 import path from 'path';
 import fs from 'fs';
-import logger from "./core/app-loger.js";
+import logger from "./core/app-logger.js";
 
 dotenv.config();
 
@@ -76,5 +76,5 @@ server.on("error", (err) => {
 
 process.on("uncaughtException", (err) => {
     logger.error(`Uncaught Exception: ${err.stack || err.message}`);
-    process.exit(1); // Exit to avoid unexpected behavior
+    //process.exit(1); // Exit to avoid unexpected behavior
 });

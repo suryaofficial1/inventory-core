@@ -1,3 +1,4 @@
+import logger from "../core/app-logger.js";
 
 export const getSuccessObject = (result = {}) => {
     let response = {
@@ -9,7 +10,7 @@ export const getSuccessObject = (result = {}) => {
 };
 
 export const getErrorObject = (statusCode, message, data = {}) => {
-    console.error("Response sent with code %s, message: %s, data: %o", statusCode, message, data);
+    logger.error(`Response sent with code ${statusCode}, message: ${message}, data: ${JSON.stringify(data)}`);
     let response = {
         status: statusCode,
         message: message,
