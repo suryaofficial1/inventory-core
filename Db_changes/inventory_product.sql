@@ -1,5 +1,3 @@
-CREATE DATABASE  IF NOT EXISTS `inventory` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `inventory`;
 -- MySQL dump 10.13  Distrib 8.0.30, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: inventory
@@ -31,10 +29,11 @@ CREATE TABLE `product` (
   `qty` varchar(500) DEFAULT NULL,
   `price` varchar(500) DEFAULT NULL,
   `unit` varchar(500) DEFAULT NULL,
+  `type` varchar(500) NOT NULL,
   `status` tinyint(1) NOT NULL DEFAULT '1',
   `created_on` timestamp NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=25 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -43,7 +42,7 @@ CREATE TABLE `product` (
 
 LOCK TABLES `product` WRITE;
 /*!40000 ALTER TABLE `product` DISABLE KEYS */;
-INSERT INTO `product` VALUES (8,'Honeydew','Juicy honeydew','30','70','Kg',1,'2025-01-24 19:26:30'),(9,'Iceberg','Crisp iceberg lettuce','20','35','Kg',0,'2025-01-24 19:26:30'),(10,'Jackfruit','Ripe jackfruit','25','80','Nos',1,'2025-01-24 19:26:30'),(11,'Kiwi','Fresh kiwis','50','90','Nos',1,'2025-01-24 19:26:30'),(12,'Lemon','Juicy lemons','75','20','Nos',1,'2025-01-24 19:26:30'),(13,'Mango','Sweet mangoes','40','100','Kg',1,'2025-01-24 19:26:30'),(14,'Nectarine','Fresh nectarines','30','110','Bag',1,'2025-01-24 19:26:30'),(15,'Orange','Juicy oranges','80','40','Bag',1,'2025-01-24 19:26:30'),(17,'Quince','Fresh quinces','15','150','Box',1,'2025-01-24 19:26:30'),(19,'Strawberry','Sweet strawberries','35','120','Box',0,'2025-01-24 19:26:30'),(20,'Tomato','Fresh tomatoes','100','25','Box',0,'2025-01-24 19:26:30'),(24,'test','desc','1000','100','Mtr',0,'2025-03-02 07:53:34');
+INSERT INTO `product` VALUES (8,'Honeydew','Juicy honeydew','30','70','Kg','purchase',1,'2025-01-24 19:26:30'),(9,'Iceberg','Crisp iceberg lettuce','20','35','Kg','purchase',0,'2025-01-24 19:26:30'),(10,'Jackfruit','Ripe jackfruit','25','80','Nos','purchase',1,'2025-01-24 19:26:30'),(11,'Kiwi','Fresh kiwis','50','90','Nos','purchase',1,'2025-01-24 19:26:30'),(12,'Lemon','Juicy lemons','75','20','Nos','purchase',1,'2025-01-24 19:26:30'),(13,'Mango','Sweet mangoes','40','100','Kg','purchase',1,'2025-01-24 19:26:30'),(14,'Nectarine','Fresh nectarines','30','110','Bag','sales',1,'2025-01-24 19:26:30'),(15,'Orange','Juicy oranges','80','40','Bag','sales',1,'2025-01-24 19:26:30'),(17,'Quince','Fresh quinces','15','150','Box','sales',1,'2025-01-24 19:26:30'),(19,'Strawberry','Sweet strawberries','35','120','Box','sales',1,'2025-01-24 19:26:30'),(20,'Tomato','Fresh tomatoes','100','25','Box','sales',1,'2025-01-24 19:26:30'),(24,'test','desc','100','100','Mtr','sales',1,'2025-03-02 07:53:34'),(25,'Plastic','Only for sales','123','200','Kg','purchase',1,'2025-04-06 10:37:16');
 /*!40000 ALTER TABLE `product` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -56,4 +55,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-04-02 10:05:01
+-- Dump completed on 2025-04-20 22:39:58

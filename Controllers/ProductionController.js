@@ -9,39 +9,23 @@ productionController.upsertProduction = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.body, [
             "customer",
+            "manufacturingDate",
             "product",
-            "pDesc",
             "qty",
             "unit",
-            "manufacturingDate",
             "operatorName",
-            "materials",
-            "mqty",
-            "mPrice",
-            "rqty",
-            "rPrice",
-            "lqty",
-            "lPrice",
+            "pDesc",
             "status"
         ]);
 
         const reqObj = {
             customer: req.body.customer,
+            manufacturingDate: req.body.manufacturingDate,
             product: req.body.product,
-            pDesc: req.body.pDesc,
             qty: req.body.qty,
             unit: req.body.unit,
-            manufacturingDate: req.body.manufacturingDate,
             operatorName: req.body.operatorName,
-
-            materials: req.body.materials,
-            mqty: req.body.mqty,
-            mPrice: req.body.mPrice,
-            rqty: req.body.rqty,
-            rPrice: req.body.rPrice,
-            lqty: req.body.lqty,
-            lPrice: req.body.lPrice,
-
+            pDesc: req.body.pDesc,
             status: req.body.status,
             id: req.params.id ? req.params.id : null
         }
@@ -53,18 +37,44 @@ productionController.upsertProduction = async (req, res) => {
     }
 };
 
+productionController.updateProductionStatus = async (req, res) => {
+    try {
+        const error = validationService.validateRequired(req.body, ['status']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const result = await productionModel.updateProductionStatus(req.body.status, req.params.id);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        console.error(err);
+        res.send(getErrorObject(500, "Internal Server Error updateProductionStatus", err));
+    }
+};
 productionController.getProductions = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.query, ['page', 'per_page']);
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
-
         const result = await productionModel.getProductions(req.query);
         return res.send(getSuccessObject(result));
     } catch (err) {
         console.error(err);
         res.send(getErrorObject(500, "Internal Server Error getProductions", err));
+    }
+};
+
+productionController.getProductionDetail = async (req, res) => {
+    try {
+        const error = validationService.validateRequired(req.params, ['id']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const result = await productionModel.getProductionDetail(req.params.id);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        console.error(err);
+        res.send(getErrorObject(500, "Internal Server Error getProductionDetail", err));
     }
 };
 

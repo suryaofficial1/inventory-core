@@ -8,8 +8,8 @@ const conditionEnum = filterService.condition;
 productModel.upsertProduct = async (body) => {
     const connection = await db.getConnection();
 
-    const updateSql = `UPDATE product SET name = ?, description = ?, qty = ?, price = ?, unit = ?, status = ? WHERE id = ?`;
-    const insertSql = `INSERT INTO product (name, description, qty, price, unit, status, created_on) VALUES (?, ?, ?, ?, ?, ?, NOW())`;
+    const updateSql = `UPDATE product SET name = ?, description = ?, qty = ?, price = ?, unit = ?, type=?, status = ? WHERE id = ?`;
+    const insertSql = `INSERT INTO product (name, description, qty, price, unit, type, status, created_on) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())`;
 
     try {
         if (body.id) {
@@ -19,6 +19,7 @@ productModel.upsertProduct = async (body) => {
                 body.qty,
                 body.price,
                 body.unit,
+                body.type,
                 body.status,
                 body.id,
             ]);
@@ -30,6 +31,7 @@ productModel.upsertProduct = async (body) => {
                 body.qty,
                 body.price,
                 body.unit,
+                body.type,
                 body.status,
             ]);
 
@@ -54,7 +56,7 @@ productModel.getProducts = async (reqData) => {
     let index = (reqData.page - 1) * pageSize;
     try {
         const countSql = `select count(*) as total from product ${finalFilter}`
-        const listSql = `select id, name, description, qty, price, unit, status from product  ${finalFilter} ORDER BY id DESC limit ${index},${pageSize}`
+        const listSql = `select id, name, description, qty, price, unit, type, status from product  ${finalFilter} ORDER BY id DESC limit ${index},${pageSize}`
 
         const [rows] = await connection.query(listSql)
         const [[count]] = await connection.query(countSql)

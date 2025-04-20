@@ -39,19 +39,6 @@ purchaseController.upsertPurchase = async (req, res, next) => {
             expiryDate: req.body.expiryDate,
             id: req.params.id ? req.params.id : null
         };
-
-        // Fetch product availability details
-        const productAvailability = await publicModel.getAvailableProductQty('purchase', 'purchase', req.body.product);
-
-        // Validate product existence and stock availability
-        if (!productAvailability || productAvailability.status === 0) {
-            return res.send(getErrorObject(400, 'Bad request', 'Product is not available.'));
-
-        }
-        if (Number(purchaseData.qty) > Number(productAvailability.availableQty)) {
-            return res.send(getErrorObject(400, 'Bad request', `Only ${productAvailability.availableQty} units are in stock. Please enter a valid quantity.`));
-        }
-
         // Perform purchase record insertion/update
         const result = await purchaseModel.upsertPurchase(purchaseData);
         return res.send(getSuccessObject(result));
@@ -103,6 +90,18 @@ purchaseController.getPurchaseByInvoiceNo = async (req, res) => {
         res.send(getErrorObject(500, "Internal Server Error", err));
     }
 };
+purchaseController.getPurchaseByProduct = async (req, res) => {
+    try {
+        const error = validationService.validateRequired(req.query, ['product']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const result = await purchaseModel.getPurchaseByProduct(req.query.product);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        res.send(getErrorObject(500, "Internal Server Error : getPurchaseByProduct", err));
+    }
+};
 
 purchaseController.getPurchaseReturnByInvoiceNo = async (req, res) => {
     try {
@@ -147,19 +146,19 @@ purchaseController.upsertPurchaseReturn = async (req, res) => {
             "price",
             "unit",
         ]);
-        const isExitPurchaseDetails = await purchaseModel.getPurchaseByInvoiceNo(req.body.invoiceNo);
+        const isExitPurchaseDetails = await purchaseModel.getPurchaseByProduct(req.body.product);
         if (!isExitPurchaseDetails.length) {
             return res.send(getErrorObject(404, 'Purchase details not found'));
         }
         // Fetch product availability details
-        const productAvailability = await publicModel.getAvailableProductQty('purchase', 'return', req.body.product);
+        const productAvailability = await publicModel.getAvailableProductQty('purchase', 'return', req.body.purchaseId);
 
         // Validate product existence and stock availability
         if (!productAvailability || productAvailability.status === 0) {
             return res.send(getErrorObject(400, 'Bad request', 'Product is not available.'));
 
         }
-        if (Number(req.body.qty) > Number(productAvailability.availableQty)) {
+        if (Number(req.body.qty) != Number(productAvailability.availableQty) && Number(req.body.qty) > Number(productAvailability.availableQty)) {
             return res.send(getErrorObject(400, 'Bad request', `Only ${productAvailability.availableQty} units are in stock. Please enter a valid quantity.`));
         }
         const reqObj = {

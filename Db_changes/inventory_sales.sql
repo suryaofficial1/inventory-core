@@ -1,5 +1,3 @@
-CREATE DATABASE  IF NOT EXISTS `inventory` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `inventory`;
 -- MySQL dump 10.13  Distrib 8.0.30, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: inventory
@@ -18,46 +16,40 @@ USE `inventory`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `production`
+-- Table structure for table `sales`
 --
 
-DROP TABLE IF EXISTS `production`;
+DROP TABLE IF EXISTS `sales`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `production` (
+CREATE TABLE `sales` (
   `id` int NOT NULL AUTO_INCREMENT,
   `c_id` int DEFAULT NULL,
   `p_id` int DEFAULT NULL,
+  `invoiceNo` varchar(500) DEFAULT NULL,
   `p_desc` varchar(1000) DEFAULT NULL,
   `qty` varchar(500) DEFAULT NULL,
+  `s_price` varchar(500) DEFAULT NULL,
   `unit` varchar(500) DEFAULT NULL,
-  `operatorName` varchar(500) DEFAULT NULL,
-  `materials` varchar(1000) DEFAULT NULL,
-  `mqty` varchar(500) DEFAULT NULL,
-  `mPrice` varchar(500) DEFAULT NULL,
-  `rqty` varchar(500) DEFAULT NULL,
-  `rPrice` varchar(500) DEFAULT NULL,
-  `lqty` varchar(500) DEFAULT NULL,
-  `lPrice` varchar(500) DEFAULT NULL,
-  `m_date` timestamp NULL DEFAULT NULL,
   `status` tinyint(1) NOT NULL DEFAULT '1',
+  `s_date` date DEFAULT NULL,
   `created_on` timestamp NOT NULL,
   PRIMARY KEY (`id`),
-  KEY `c_id` (`c_id`),
-  KEY `p_id` (`p_id`),
-  CONSTRAINT `production_ibfk_1` FOREIGN KEY (`c_id`) REFERENCES `customer` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `production_ibfk_2` FOREIGN KEY (`p_id`) REFERENCES `product` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+  KEY `sales_ibfk_1` (`p_id`),
+  KEY `sales_ibfk_2` (`c_id`),
+  CONSTRAINT `sales_ibfk_1` FOREIGN KEY (`p_id`) REFERENCES `production` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `sales_ibfk_2` FOREIGN KEY (`c_id`) REFERENCES `customer` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `production`
+-- Dumping data for table `sales`
 --
 
-LOCK TABLES `production` WRITE;
-/*!40000 ALTER TABLE `production` DISABLE KEYS */;
-INSERT INTO `production` VALUES (1,18,17,'Check update desc','12','Mtr','New OP','[\"q\",\"q\",\"w\",\"w\",\"ee\"]','12','1000','11','122','1000','5000','2025-03-28 18:30:00',1,'2025-03-29 13:24:51'),(2,9,15,'new desc ','1000','Kg','New OP 2','[\"wew ew\",\"ew\",\"ewe\",\"w\",\"e\",\"w\",\"ew\",\"e\"]','33','323`','112','1212','21212','2121','2025-03-28 18:30:00',1,'2025-03-29 13:35:06');
-/*!40000 ALTER TABLE `production` ENABLE KEYS */;
+LOCK TABLES `sales` WRITE;
+/*!40000 ALTER TABLE `sales` DISABLE KEYS */;
+INSERT INTO `sales` VALUES (1,20,3,'1GM','ok','6','200','Mtr',1,'2025-04-13','2025-04-12 19:59:01'),(3,15,3,'NSC','ok','4','2000','Box',1,'2025-04-13','2025-04-13 16:32:40'),(4,12,2,'1GM','ok','122','1000','Box',1,'2025-04-13','2025-04-13 16:34:11');
+/*!40000 ALTER TABLE `sales` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 
@@ -69,4 +61,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-04-02 10:05:02
+-- Dump completed on 2025-04-20 22:39:58

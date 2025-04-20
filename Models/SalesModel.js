@@ -47,7 +47,7 @@ salesModel.upsertSales = async (body) => {
 
 const sales_config = [
     { inputKey: "cName", column: 'c.name', condition: conditionEnum.CONTAIN },
-    { inputKey: "pName", column: 'p.name', condition: conditionEnum.CONTAIN },
+    { inputKey: "pName", column: 'p.product', condition: conditionEnum.CONTAIN },
 ];
 
 salesModel.getSales = async (reqData) => {
@@ -60,14 +60,14 @@ salesModel.getSales = async (reqData) => {
     try {
         const countSql = `SELECT COUNT(*) as total FROM sales s
                             LEFT JOIN customer c ON c.id = s.c_id
-                            LEFT JOIN product p ON p.id = s.p_id ${whereCondition} ${filter}`;
+                            LEFT JOIN production p ON p.id = s.p_id ${whereCondition} ${filter}`;
         const listSql = `SELECT s.id, s.invoiceNo, JSON_OBJECT('id', c.id, 'name', c.name) AS customer,
-                            JSON_OBJECT('id', p.id, 'name', p.name) AS product,
+                            JSON_OBJECT('id', p.id, 'product', p.product) AS product,
                              s.p_desc AS pDesc, s.qty, s.s_price AS salesPrice, s.unit, s.status,
                               s.s_date AS salesDate
                             FROM sales s
                             LEFT JOIN customer c ON c.id = s.c_id
-                            LEFT JOIN product p ON p.id = s.p_id
+                            LEFT JOIN production p ON p.id = s.p_id
         ${whereCondition} ${filter} ORDER BY s.id DESC LIMIT ${index}, ${pageSize}`;
 
         const [rows] = await connection.query(listSql);
@@ -98,12 +98,12 @@ salesModel.getSalesByInvoiceNo = async (invoiceNo) => {
     const connection = await db.getConnection();
     try {
         const listSql = `SELECT s.id, s.invoiceNo ,JSON_OBJECT('id', c.id, 'name', c.name) AS customer,
-                            JSON_OBJECT('id', p.id, 'name', p.name) AS product,
+                            JSON_OBJECT('id', p.id, 'product', p.product) AS product,
                              s.p_desc AS pDesc, s.qty, s.s_price AS salesPrice, s.unit, s.status,
                               s.s_date AS salesDate
                             FROM sales s
                             LEFT JOIN customer c ON c.id = s.c_id
-                            LEFT JOIN product p ON p.id = s.p_id
+                            LEFT JOIN production p ON p.id = s.p_id
                                 where s.invoiceNo like '%${invoiceNo}%'`;
         const [rows] = await connection.query(listSql);
         return rows;
@@ -116,11 +116,11 @@ salesModel.getSalesReturnByInvoiceNo = async (invoiceNo) => {
     const connection = await db.getConnection();
     try {
         const listSql = `SELECT sr.id, sr.invoiceNo, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, 
-                            JSON_OBJECT('id', p.id, 'name', p.name) AS product, 
+                            JSON_OBJECT('id', p.id, 'product', p.product) AS product, 
                             sr.r_desc rDesc, sr.r_qty qty, sr.s_price salesPrice, sr.unit, sr.status, sr.created_on AS returnDate
                          FROM sales_return sr
                             LEFT JOIN customer c ON sr.c_id = c.id 
-                            LEFT JOIN product p ON  sr.p_id = p.id
+                            LEFT JOIN production p ON  sr.p_id = p.id
                                 where sr.invoiceNo = '${invoiceNo}'`;
         const [[rows]] = await connection.query(listSql);
         return rows;
@@ -189,11 +189,11 @@ salesModel.getSalesReturnList = async (reqData) => {
                             LEFT JOIN customer c ON sr.c_id = c.id 
                             LEFT JOIN product p ON  sr.p_id = p.id ${whereCondition} ${filter}`;
         const listSql = `SELECT sr.id, sr.invoiceNo, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, 
-                            JSON_OBJECT('id', p.id, 'name', p.name) AS product, 
+                            JSON_OBJECT('id', p.id, 'product', p.product) AS product, 
                             sr.r_desc rDesc, sr.r_qty qty, sr.s_price salesPrice, sr.unit, sr.status, sr.created_on AS returnDate
                          FROM sales_return sr
                             LEFT JOIN customer c ON sr.c_id = c.id 
-                            LEFT JOIN product p ON  sr.p_id = p.id
+                            LEFT JOIN production p ON  sr.p_id = p.id
         ${whereCondition} ${filter} ORDER BY sr.id DESC LIMIT ${index}, ${pageSize}`;
 
         const [rows] = await connection.query(listSql);
@@ -211,6 +211,45 @@ salesModel.deleteSalesReturn = async (id) => {
         const sql = `DELETE FROM sales_return WHERE id = ?`;
         const [result] = await connection.query(sql, [id]);
         return result;
+    } finally {
+        connection.release();
+    }
+};
+
+salesModel.getProductDetails = async (id) => {
+    const connection = await db.getConnection();
+    const returnQtySql = `SELECT p.id AS productId, p.status, CAST(p.qty AS DECIMAL(10, 2)) AS totalQty, SUM(CAST(s.qty AS DECIMAL(10, 2))) AS soldQty,
+                            SUM(CAST(sr.r_qty AS DECIMAL(10, 2))) AS returnSoldQty,
+                         IFNULL(SUM(CAST(s.qty AS DECIMAL(10, 2)))  -  SUM(CAST(sr.r_qty AS DECIMAL(10, 2))), 0) AS totalSold,
+                     CAST(p.qty AS DECIMAL(10, 2)) - IFNULL(SUM(CAST(s.qty AS DECIMAL(10, 2)))  -  SUM(CAST(sr.r_qty AS DECIMAL(10, 2))), 0) AS availableQty
+                    FROM production p
+                    LEFT JOIN sales s ON p.id = s.p_id
+                    LEFT JOIN sales_return sr ON s.id = sr.sel_id
+                    WHERE p.id = ?
+                    GROUP BY p.id`;
+
+    try {
+        const [[result]] = await connection.query(returnQtySql, [id]);
+        return { availableQty: result.availableQty };
+    } finally {
+        connection.release();
+    }
+};
+salesModel.getProductDetails = async (id) => {
+    const connection = await db.getConnection();
+    const returnQtySql = `SELECT p.id AS productId, p.status, CAST(p.qty AS DECIMAL(10, 2)) AS totalQty, SUM(CAST(s.qty AS DECIMAL(10, 2))) AS soldQty,
+                            SUM(CAST(sr.r_qty AS DECIMAL(10, 2))) AS returnSoldQty,
+                         IFNULL(SUM(CAST(s.qty AS DECIMAL(10, 2)))  -  SUM(CAST(sr.r_qty AS DECIMAL(10, 2))), 0) AS totalSold,
+                     CAST(p.qty AS DECIMAL(10, 2)) - IFNULL(SUM(CAST(s.qty AS DECIMAL(10, 2)))  -  SUM(CAST(sr.r_qty AS DECIMAL(10, 2))), 0) AS availableQty
+                    FROM production p
+                    LEFT JOIN sales s ON p.id = s.p_id
+                    LEFT JOIN sales_return sr ON s.id = sr.sel_id
+                    WHERE p.id = ?
+                    GROUP BY p.id`;
+
+    try {
+        const [[result]] = await connection.query(returnQtySql, [id]);
+        return { availableQty: result.availableQty };
     } finally {
         connection.release();
     }

@@ -6,7 +6,7 @@ const productController = {};
 
 productController.upsertProduct = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, ["name", "description", "qty", "price", "unit", "status"]);
+        const error = validationService.validateRequired(req.body, ["name", "description", "qty", "price", "unit", "type", "status"]);
 
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
@@ -17,6 +17,7 @@ productController.upsertProduct = async (req, res) => {
             qty: req.body.qty,
             price: req.body.price,
             unit: req.body.unit,
+            type: req.body.type,
             status: req.body.status,
             id: req.params.id
         }

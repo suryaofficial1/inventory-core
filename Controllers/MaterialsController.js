@@ -9,25 +9,28 @@ materialsController.upsertMaterial = async (req, res) => {
     try {
 
         const error = validationService.validateRequired(req.body, [
-            "materials",
+            "productionId",
+            "product",
             "mqty",
             "mPrice",
-            "rqty",
-            "rPrice",
-            "lqty",
-            "lPrice",
-            "status"
+            // "rqty",
+            // "rPrice",
+            // "lqty",
+            // "lPrice"
         ]);
+        if(error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
 
         const reqObj = {
-            materials: req.body.materials,
+            productionId: req.body.productionId,
+            product: req.body.product,
             mqty: req.body.mqty,
             mPrice: req.body.mPrice,
             rqty: req.body.rqty,
             rPrice: req.body.rPrice,
             lqty: req.body.lqty,
             lPrice: req.body.lPrice,
-            status: req.body.status,
             id: req.params.id ? req.params.id : null
         }
         const results = await materialsModel.upsertMaterial(reqObj);
@@ -40,12 +43,12 @@ materialsController.upsertMaterial = async (req, res) => {
 
 materialsController.getMaterials = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.query, ['page', 'per_page']);
+        const error = validationService.validateRequired(req.params, ['productionId']);
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
 
-        const result = await materialsModel.getMaterials(req.query);
+        const result = await materialsModel.getMaterials(req.params.productionId);
         return res.send(getSuccessObject(result));
     } catch (err) {
         console.error(err);
@@ -65,6 +68,19 @@ materialsController.deleteMaterial = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.send(getErrorObject(500, "Internal Server Error deleteMaterial", err));
+    }
+};
+materialsController.getAvailableProductQty = async (req, res) => {
+    try {
+        const error = validationService.validateRequired(req.params, ['id']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+       const result = await materialsModel.getAvailableProductQty(req.params.id);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        console.error(err);
+        res.send(getErrorObject(500, "Internal Server Error getAvailableProductQty", err));
     }
 };
 

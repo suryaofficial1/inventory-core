@@ -1,5 +1,3 @@
-CREATE DATABASE  IF NOT EXISTS `inventory` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `inventory`;
 -- MySQL dump 10.13  Distrib 8.0.30, for Win64 (x86_64)
 --
 -- Host: 127.0.0.1    Database: inventory
@@ -27,7 +25,7 @@ DROP TABLE IF EXISTS `purchase_return`;
 CREATE TABLE `purchase_return` (
   `id` int NOT NULL AUTO_INCREMENT,
   `pr_id` int DEFAULT NULL,
-  `p_id` int NOT NULL,
+  `product` varchar(500) DEFAULT NULL,
   `s_id` int NOT NULL,
   `invoiceNo` varchar(1000) DEFAULT NULL,
   `b_num` varchar(500) DEFAULT NULL,
@@ -39,12 +37,10 @@ CREATE TABLE `purchase_return` (
   `updated_on` timestamp NOT NULL,
   PRIMARY KEY (`id`),
   KEY `suplier_fk_idx` (`s_id`),
-  KEY `product_fk_idx` (`p_id`),
   KEY `purchase_return_ibfk_1` (`pr_id`),
-  CONSTRAINT `product_fk` FOREIGN KEY (`p_id`) REFERENCES `product` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `purchase_return_ibfk_1` FOREIGN KEY (`pr_id`) REFERENCES `purchase` (`id`) ON DELETE CASCADE ON UPDATE RESTRICT,
   CONSTRAINT `suplier_fk` FOREIGN KEY (`s_id`) REFERENCES `supplier` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -53,7 +49,7 @@ CREATE TABLE `purchase_return` (
 
 LOCK TABLES `purchase_return` WRITE;
 /*!40000 ALTER TABLE `purchase_return` DISABLE KEYS */;
-INSERT INTO `purchase_return` VALUES (4,1,17,21,'ERT01','ABC','1','122','Nos','s','2025-03-16 10:46:25','2025-03-16 10:46:25');
+INSERT INTO `purchase_return` VALUES (1,1,'Laptop Bag',19,'123I','123B','5','1200','Box','ok','2025-04-07 19:34:25','2025-04-07 19:37:50');
 /*!40000 ALTER TABLE `purchase_return` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -66,4 +62,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-04-02 10:05:03
+-- Dump completed on 2025-04-20 22:39:58

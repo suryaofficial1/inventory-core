@@ -7,8 +7,8 @@ const conditionEnum = filterService.condition;
 purchaseModel.upsertPurchase = async (body) => {
     const connection = await db.getConnection();
 
-    const updateSql = `UPDATE purchase SET s_id = ?, p_id = ?, invoiceNo =?, b_num =?, description = ?, qty = ?, price = ?, unit = ?, status = ?, p_date = ?, e_date = ? WHERE id = ?`;
-    const insertSql = `INSERT INTO purchase (s_id, p_id, invoiceNo, b_num, description, qty, price, unit, status, p_date, e_date, created_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
+    const updateSql = `UPDATE purchase SET s_id = ?, product = ?, invoiceNo =?, b_num =?, description = ?, qty = ?, price = ?, unit = ?, status = ?, p_date = ?, e_date = ? WHERE id = ?`;
+    const insertSql = `INSERT INTO purchase (s_id, product, invoiceNo, b_num, description, qty, price, unit, status, p_date, e_date, created_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
 
     try {
         if (body.id) {
@@ -52,7 +52,7 @@ purchaseModel.upsertPurchase = async (body) => {
 
 const sales_config = [
     { inputKey: "sName", column: 's.name', condition: conditionEnum.CONTAIN },
-    { inputKey: "pName", column: 'pd.name', condition: conditionEnum.CONTAIN },
+    { inputKey: "pName", column: 'p.product', condition: conditionEnum.CONTAIN },
 ];
 
 purchaseModel.getPurchaseList = async (reqData) => {
@@ -65,15 +65,13 @@ purchaseModel.getPurchaseList = async (reqData) => {
     try {
         const countSql = `SELECT COUNT(*) as total FROM purchase p
                             LEFT JOIN supplier s ON p.s_id = s.id
-                            LEFT JOIN product pd ON p.p_id = pd.id ${whereCondition} ${filter}`;
-        const listSql = `SELECT p.id, invoiceNo, b_num bNumber,  JSON_OBJECT('id', s.id, 'name', s.name) AS supplier, 
-                            JSON_OBJECT('id', pd.id, 'name', pd.name ,'qty', pd.qty, 'unit', pd.unit) AS product, 
-                            p.description,  p.qty, p.price, p.unit, p.status, p.p_date AS purchaseDate, e_date as expiryDate
+                              ${whereCondition} ${filter}`;
+        const listSql = `SELECT p.id, invoiceNo, b_num bNumber, p.product, p.description,  
+                            p.qty, p.price, p.unit, p.status, p.p_date AS purchaseDate,
+                             e_date as expiryDate, JSON_OBJECT('id', s.id, 'name', s.name) AS supplier
                         FROM purchase p
                         LEFT JOIN  supplier s ON p.s_id = s.id
-                        LEFT JOIN  product pd ON p.p_id = pd.id
-        ${whereCondition} ${filter} ORDER BY p.id DESC LIMIT ${index}, ${pageSize}`;
-
+                        ${whereCondition} ${filter} ORDER BY p.id DESC LIMIT ${index}, ${pageSize}`;
         const [rows] = await connection.query(listSql);
         const [[count]] = await connection.query(countSql);
         const response = { rows, ...count };
@@ -100,14 +98,27 @@ purchaseModel.deletePurchaseDetails = async (id) => {
 purchaseModel.getPurchaseByInvoiceNo = async (invoiceNo) => {
     const connection = await db.getConnection();
     try {
-        const listSql = `SELECT p.id, p.invoiceNo, p.b_num bNumber,   JSON_OBJECT('id', s.id, 'name', s.name) AS supplier, 
-                            JSON_OBJECT('id', pd.id, 'name', pd.name) AS product, 
+        const listSql = `SELECT p.id, p.invoiceNo, p.b_num bNumber,p.product, 
                             p.description, p_order purchaseOrder,  p.qty, p.price, p.unit, p.status, 
-                            p.p_date AS purchaseDate, e_date as expiryDate
+                            p.p_date AS purchaseDate, e_date as expiryDate, JSON_OBJECT('id', s.id, 'name', s.name) AS supplier
                             FROM purchase p
-                        LEFT JOIN  supplier s ON p.s_id = s.id
-                        LEFT JOIN  product pd ON p.p_id = pd.id
-        where p.invoiceNo like '%${invoiceNo}%'`;
+                             JOIN  supplier s ON p.s_id = s.id
+                            where p.invoiceNo like '%${invoiceNo}%'`;
+        const [rows] = await connection.query(listSql);
+        return rows;
+    } finally {
+        connection.release();
+    }
+};
+purchaseModel.getPurchaseByProduct = async (product) => {
+    const connection = await db.getConnection();
+    try {
+        const listSql = `SELECT p.id, p.invoiceNo, p.b_num bNumber,p.product, 
+                            p.description, p_order purchaseOrder,  p.qty, p.price, p.unit, p.status, 
+                            p.p_date AS purchaseDate, e_date as expiryDate, JSON_OBJECT('id', s.id, 'name', s.name) AS supplier
+                            FROM purchase p
+                             JOIN  supplier s ON p.s_id = s.id
+                            where p.product like '%${product}%'`;
         const [rows] = await connection.query(listSql);
         return rows;
     } finally {
@@ -119,12 +130,10 @@ purchaseModel.getPurchaseReturnByInvoiceNo = async (invoiceNo) => {
     const connection = await db.getConnection();
     try {
         const listSql = `SELECT pr.id, JSON_OBJECT('id', s.id, 'name', s.name) AS supplier, 
-                            JSON_OBJECT('id', pd.id, 'name', pd.name) AS product, 
-                            pr.r_desc rDesc, pr.r_qty qty, pr.price, pr.unit, pr.created_on AS returnDate
+                            pr.product, pr.r_desc rDesc, pr.r_qty qty, pr.price, pr.unit, pr.created_on AS returnDate
                         FROM purchase_return pr
                         LEFT JOIN  supplier s ON pr.s_id = s.id
-                        LEFT JOIN  product pd ON pr.p_id = pd.id
-        where pr.invoiceNo = '${invoiceNo}'`;
+                         where pr.invoiceNo = '${invoiceNo}'`;
         const [[rows]] = await connection.query(listSql);
         return rows;
     } finally {
@@ -135,8 +144,8 @@ purchaseModel.getPurchaseReturnByInvoiceNo = async (invoiceNo) => {
 purchaseModel.upsertPurchaseReturn = async (body) => {
     const connection = await db.getConnection();
 
-    const updateSql = `UPDATE purchase_return SET pr_id= ?, p_id= ?, s_id= ?, invoiceNo= ?, b_num= ?, r_qty=?, price=?, unit= ?, r_desc=?, updated_on = NOW() WHERE id = ?`;
-    const insertSql = `INSERT INTO purchase_return (pr_id, p_id, s_id, invoiceNo, b_num, r_qty, price, unit, r_desc,  created_on, updated_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+    const updateSql = `UPDATE purchase_return SET pr_id= ?, product= ?, s_id= ?, invoiceNo= ?, b_num= ?, r_qty=?, price=?, unit= ?, r_desc=?, updated_on = NOW() WHERE id = ?`;
+    const insertSql = `INSERT INTO purchase_return (pr_id, product, s_id, invoiceNo, b_num, r_qty, price, unit, r_desc,  created_on, updated_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
 
     try {
         if (body.id) {
@@ -176,7 +185,7 @@ purchaseModel.upsertPurchaseReturn = async (body) => {
 
 const return_config = [
     { inputKey: "sName", column: 's.name', condition: conditionEnum.CONTAIN },
-    { inputKey: "pName", column: 'pd.name', condition: conditionEnum.CONTAIN },
+    { inputKey: "pName", column: 'pr.product', condition: conditionEnum.CONTAIN },
 ];
 
 purchaseModel.getPurchaseReturnList = async (reqData) => {
@@ -188,14 +197,10 @@ purchaseModel.getPurchaseReturnList = async (reqData) => {
     let index = (reqData.page - 1) * pageSize;
     try {
         const countSql = `SELECT COUNT(*) as total FROM purchase_return pr
-                            LEFT JOIN supplier s ON pr.s_id = s.id
-                            LEFT JOIN product pd ON pr.p_id = pd.id ${whereCondition} ${filter}`;
-        const listSql = `SELECT pr.id, pr.invoiceNo, pr.b_num bNumber,  JSON_OBJECT('id', s.id, 'name', s.name) AS supplier, 
-                            JSON_OBJECT('id', pd.id, 'name', pd.name) AS product, 
-                            pr.r_desc rDesc, pr.r_qty qty, pr.price, pr.unit, pr.created_on AS returnDate
+                            LEFT JOIN supplier s ON pr.s_id = s.id  ${whereCondition} ${filter}`;
+        const listSql = `SELECT pr.id, pr.invoiceNo, pr.b_num bNumber,  JSON_OBJECT('id', s.id, 'name', s.name) AS supplier, pr.product, pr.r_desc rDesc, pr.r_qty qty, pr.price, pr.unit, pr.created_on AS returnDate
                         FROM purchase_return pr
                         LEFT JOIN  supplier s ON pr.s_id = s.id
-                        LEFT JOIN  product pd ON pr.p_id = pd.id
         ${whereCondition} ${filter} ORDER BY pr.id DESC LIMIT ${index}, ${pageSize}`;
 
         const [rows] = await connection.query(listSql);

@@ -6,39 +6,36 @@ const conditionEnum = filterService.condition;
 
 
 materialsModel.upsertMaterial = async (body) => {
-    const materialsStr = JSON.stringify(body.materials); 
     const connection = await db.getConnection();
-    const updateSql = `UPDATE materials SET  materials = ?, mqty =?, mPrice =? , rqty =?, rPrice =?, lqty =?, lPrice =? , status = ? WHERE id = ?`;
-    const insertSql = `INSERT INTO materials (materials, mqty, mPrice, rqty, rPrice, lqty, lPrice, status, created_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
+    const updateSql = `UPDATE materials SET  productionId=?, product = ?, mqty =?, mPrice =? , rqty =?, rPrice =?, lqty =?, lPrice =?  WHERE id = ?`;
+    const insertSql = `INSERT INTO materials (productionId, product, mqty, mPrice, rqty, rPrice, lqty, lPrice,  created_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
 
     try {
         if (body.id) {
-            const [result] = await connection.query(updateSql, [
-                materialsStr,
+            await connection.query(updateSql, [
+                body.productionId,
+                body.product,
                 body.mqty,
                 body.mPrice,
                 body.rqty,
                 body.rPrice,
                 body.lqty,
                 body.lPrice,
-                body.status,
                 body.id,
             ]);
-            return result;
+            return true;
         } else {
-            const [insertResult] = await connection.query(insertSql, [
-                materialsStr,
+            await connection.query(insertSql, [
+                body.productionId,
+                body.product,
                 body.mqty,
                 body.mPrice,
                 body.rqty,
                 body.rPrice,
                 body.lqty,
                 body.lPrice,
-                body.status,
             ]);
-
-            const productionId = insertResult.insertId;
-            return { insertId: productionId };
+            return true;
         }
     } finally {
         connection.release();
@@ -50,21 +47,19 @@ materialsModel.upsertMaterial = async (body) => {
 //     { inputKey: "pName", column: 'pd.name', condition: conditionEnum.CONTAIN },
 // ];
 
-materialsModel.getMaterials = async (reqData) => {
+materialsModel.getMaterials = async (id) => {
     const connection = await db.getConnection();
-    // const filter = filterService.generateFilterSQL(reqData, production_config);
-    // const whereCondition = filter.trim().length > 0 ? ' WHERE ' : '';
 
-    let pageSize = reqData.per_page;
-    let index = (reqData.page - 1) * pageSize;
     try {
-        const countSql = `SELECT COUNT(*) as total FROM materials`;
-        const listSql = `SELECT id, materials, mqty, mPrice, rqty, rPrice, lqty, lPrice, status, created_on FROM materials ORDER BY id DESC LIMIT ${index}, ${pageSize}`;
-
+        const listSql = `SELECT m.id, m.productionId, 
+        JSON_OBJECT('id', p.id, 'product', p.product) AS product, 
+        m.mqty, m.mPrice, m.rqty, m.rPrice, m.lqty, m.lPrice, m.created_on 
+        FROM materials m
+         LEFT JOIN purchase p ON m.product = p.id
+         where m.productionId = ${id}
+        ORDER BY m.id DESC`;
         const [rows] = await connection.query(listSql);
-        const [[count]] = await connection.query(countSql);
-        const response = { rows, ...count };
-        return response;
+        return rows;
     } finally {
         connection.release();
     }
@@ -76,6 +71,28 @@ materialsModel.deleteMaterial = async (id) => {
         const sql = `DELETE FROM materials WHERE id = ?`;
         const [result] = await connection.query(sql, [id]);
         return result;
+    } finally {
+        connection.release();
+    }
+};
+materialsModel.getAvailableProductQty = async (id) => {
+    const connection = await db.getConnection();
+    const returnQtySql = `SELECT 
+                        p.id AS productId,
+                        CAST(p.qty AS DECIMAL(10, 2)) AS totalQty,
+                        SUM(CAST(m.mqty AS DECIMAL(10, 2))) AS mqty,
+                            SUM(CAST(m.rqty AS DECIMAL(10, 2))) AS rqty,
+                        IFNULL(SUM(CAST(m.mqty AS DECIMAL(10, 2)) + CAST(m.rqty AS DECIMAL(10, 2))), 0) AS usedQty,
+                    CAST(p.qty AS DECIMAL(10, 2)) - 
+                        IFNULL(SUM(CAST(m.mqty AS DECIMAL(10, 2)) + CAST(m.rqty AS DECIMAL(10, 2))), 0) AS availableQty
+                    FROM purchase p
+                    LEFT JOIN materials m ON m.product = p.id
+                    WHERE p.id = ?
+                    GROUP BY p.id`;
+
+    try {
+        const [[result]] = await connection.query(returnQtySql, [id]);
+        return { availableQty: result.availableQty };
     } finally {
         connection.release();
     }
