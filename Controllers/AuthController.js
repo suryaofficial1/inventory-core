@@ -87,7 +87,7 @@ const getUserSuccessResponse = (user) => {
     if (!user) {
         return getErrorObject(404, 'User not found');
     }
-    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '30d' });
+    const token = jwt.sign({ id: user.id, email: user.email, name: user.name }, process.env.JWT_SECRET, { expiresIn: '365d' });
 
     return getSuccessObject({
         isLoggedIn: true,
