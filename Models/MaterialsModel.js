@@ -78,17 +78,21 @@ materialsModel.deleteMaterial = async (id) => {
 materialsModel.getAvailableProductQty = async (id) => {
     const connection = await db.getConnection();
     const returnQtySql = `SELECT 
-                        p.id AS productId,
-                        CAST(p.qty AS DECIMAL(10, 2)) AS totalQty,
-                        SUM(CAST(m.mqty AS DECIMAL(10, 2))) AS mqty,
-                            SUM(CAST(m.rqty AS DECIMAL(10, 2))) AS rqty,
-                        IFNULL(SUM(CAST(m.mqty AS DECIMAL(10, 2)) + CAST(m.rqty AS DECIMAL(10, 2))), 0) AS usedQty,
-                    CAST(p.qty AS DECIMAL(10, 2)) - 
-                        IFNULL(SUM(CAST(m.mqty AS DECIMAL(10, 2)) + CAST(m.rqty AS DECIMAL(10, 2))), 0) AS availableQty
-                    FROM purchase p
-                    LEFT JOIN materials m ON m.product = p.id
-                    WHERE p.id = ?
-                    GROUP BY p.id`;
+                            p.id AS productId,
+                            CAST(ANY_VALUE(p.qty) AS DECIMAL(10, 0)) AS totalQty,
+                            SUM(CAST(m.mqty AS DECIMAL(10, 0))) AS mqty,
+                            SUM(CAST(m.rqty AS DECIMAL(10, 0))) AS rqty,
+                            IFNULL(SUM(CAST(m.mqty AS DECIMAL(10, 0)) + CAST(m.rqty AS DECIMAL(10, 0))), 0) AS usedQty,
+                            CAST(ANY_VALUE(p.qty) AS DECIMAL(10, 0)) - 
+                                IFNULL(SUM(CAST(m.mqty AS DECIMAL(10, 0)) + CAST(m.rqty AS DECIMAL(10, 0))), 0) AS availableQty
+                        FROM 
+                            purchase p
+                        LEFT JOIN 
+                            materials m ON m.product = p.id
+                        WHERE 
+                            p.id = ?
+                        GROUP BY 
+                            p.id`;
 
     try {
         const [[result]] = await connection.query(returnQtySql, [id]);
