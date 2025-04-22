@@ -18,6 +18,7 @@ export default async function authorize(req, res, next) {
       // Set the token
       const token = bearerToken;
       const data = await jwt.verify(token, process.env.JWT_SECRET);
+      console.log("data", data, token)
       if (data.id) {
         req.token = token;
         req.user = data;

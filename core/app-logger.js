@@ -21,8 +21,11 @@ const infoTransport = new winston.transports.DailyRotateFile({
   datePattern: "YYYY-MM-DD",
   zippedArchive: false,
   maxFiles: "7d",
-  level: "info", // ✅ Logs only "info" messages
-  format: winston.format.combine(winston.format.timestamp(), customFormat),
+  level: "info",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    customFormat
+  ),
 });
 
 // ✅ Error Transport (Only "error" logs)
@@ -31,17 +34,29 @@ const errorTransport = new winston.transports.DailyRotateFile({
   datePattern: "YYYY-MM-DD",
   zippedArchive: false,
   maxFiles: "7d",
-  level: "error", // ✅ Logs only "error" messages
-  format: winston.format.combine(winston.format.timestamp(), customFormat),
+  level: "error",
+  format: winston.format.combine(
+    winston.format.timestamp(),
+    customFormat
+  ),
 });
 
 // ✅ Create Logger WITHOUT Global Level
 const logger = winston.createLogger({
   transports: [
-    infoTransport,  // Handles only info logs
-    errorTransport, // Handles only error logs
-    new winston.transports.Console(), // Optional: Console logs
+    infoTransport,
+    errorTransport,
   ],
 });
+
+// ✅ Add Console Transport separately with color and timestamp
+logger.add(new winston.transports.Console({
+  level: "debug", // Change to 'info' if you want fewer logs in console
+  format: winston.format.combine(
+    winston.format.colorize(),
+    winston.format.timestamp(),
+    customFormat
+  ),
+}));
 
 export default logger;
