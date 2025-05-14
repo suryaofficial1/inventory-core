@@ -178,9 +178,9 @@ reportModel.getStockReports = async (reqData) => {
                                 prch.qty AS pQty,
                                 prch.price AS pRate,
                                 DATE_FORMAT(MAX(m.created_on), '%Y-%m-%d') AS mDate,
-                                IFNULL(SUM(m.mqty), 0) - IFNULL(SUM(m.rqty), 0) AS mQty,
+                                IFNULL(SUM(m.mqty), 0)  AS mQty,
                                 IFNULL(SUM(m.rqty), 0) AS rQty,
-                                prch.qty - (IFNULL(SUM(m.mqty), 0) - IFNULL(SUM(m.rqty), 0)) AS balanceQty
+                                prch.qty - (IFNULL(SUM(m.mqty), 0) + IFNULL(SUM(m.rqty), 0)) AS balanceQty
                             FROM 
                                 purchase prch
                             LEFT JOIN 
