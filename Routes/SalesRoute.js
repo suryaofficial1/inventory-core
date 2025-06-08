@@ -8,7 +8,10 @@ salesRouter.get('/sales-list', authorize, salesController.getSales);
 salesRouter.post('/sales', authorize, authorizeSuperAdmin, salesController.upsertSales);
 salesRouter.post('/sales/:id', authorize, authorizeSuperAdmin, salesController.upsertSales);
 salesRouter.delete('/sales/:id', authorize, authorizeSuperAdmin, salesController.deleteSales);
-salesRouter.get('/:id/product', authorize, authorizeSuperAdmin, salesController.getProductDetails);
+
+salesRouter.get('/:id/product/availability', authorize, authorizeSuperAdmin, salesController.getSalesItemAvailableQty);
+
+salesRouter.get('/product/:id/:cId/customer/:type', authorize, authorizeSuperAdmin, salesController.getExitingSalesProductDetails);
 
 // Return
 salesRouter.get('/list-by-invoice', authorize, salesController.getSalesByInvoiceNo);

@@ -10,6 +10,7 @@ productionRouter.post('/production', productionController.upsertProduction);
 productionRouter.post('/production/:id', productionController.upsertProduction);
 productionRouter.delete('/production/:id', productionController.deleteProduction);
 productionRouter.post('/:id/status', productionController.updateProductionStatus);
+productionRouter.get('/product/:id', productionController.getProductionDetailByProduct);
 
 export default productionRouter
 

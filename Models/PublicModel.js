@@ -26,11 +26,23 @@ publicModel.getCustomers = async () => {
     }
 };
 
-publicModel.getProducts = async (type) => {
+publicModel.getProducts = async (type, product = "") => {
+    let where = [];
+
+    if (type !== 'all') {
+        where.push(`type = '${type}'`);
+    }
+
+    if (product) {
+        where.push(`name like '%${product}%'`);
+    }
+
+    const condition = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+
     const connection = await db.getConnection();
+
     try {
-        let condition = type === 'all' ? '' : ` where type = '${type}'`;
-        const listSql = `select id, name, qty, unit from product ${condition}  ORDER BY id DESC`;
+        const listSql = `SELECT id, name, qty, unit, price FROM product ${condition} ORDER BY id DESC`;
         const [rows] = await connection.query(listSql);
         return rows;
     } finally {
@@ -38,10 +50,14 @@ publicModel.getProducts = async (type) => {
     }
 };
 
+
 publicModel.getPurchaseProducts = async () => {
     const connection = await db.getConnection();
     try {
-        const listSql = `select id, product, qty, unit from purchase ORDER BY id DESC`;
+        const listSql = `select p.id purchaseId, pr.id, pr.name, pr.qty, pr.price, pr.unit, pr.description 
+        from purchase p 
+			join product pr on p.p_id = pr.id and type ="purchase"
+             ORDER BY id DESC`;
         const [rows] = await connection.query(listSql);
         return rows;
     } finally {
@@ -52,6 +68,66 @@ publicModel.getProductionProducts = async () => {
     const connection = await db.getConnection();
     try {
         const listSql = `select id, product, qty, unit from production ORDER BY id DESC`;
+        const [rows] = await connection.query(listSql);
+        return rows;
+    } finally {
+        connection.release();
+    }
+};
+
+publicModel.getProductionProductsDetails = async (product, status) => {
+    const connection = await db.getConnection();
+    let condition = "";
+    if (status != "all") {
+        condition = ` and p.status = '${status}'`;
+    }
+    try {
+        const listSql = `select p.id, JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, 
+                            p.qty, p.unit, p.operatorName, p.m_date manufacturingDate, p.status
+                                from production p
+                                    left join product pr on p.product = pr.id
+                                    left join customer c on p.c_id = c.id
+                                     where pr.name like '%${product}%' ${condition}
+                                        ORDER BY p.id DESC`;
+        const [rows] = await connection.query(listSql);
+        return rows;
+    } finally {
+        connection.release();
+    }
+};
+
+publicModel.getSalesProducts = async (product, cId) => {
+    const connection = await db.getConnection();
+    let condition = "";
+    if (cId) {
+        condition = ` and c.id = '${cId}'`;
+    }
+    try {
+        const listSql = `select s.id , s.productionId, JSON_OBJECT('id', p.id, 'name', p.name) AS product, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, s.qty, s.unit, s.invoiceNo, s.s_price 
+                                 FROM sales s
+                                    LEFT JOIN production prd ON prd.id = s.productionId
+                                    left join product p on s.p_id = p.id
+                                    LEFT JOIN customer c ON c.id = s.c_id
+                                        where p.name like '%${product}%' ${condition}
+                                         ORDER BY id DESC`;
+        const [rows] = await connection.query(listSql);
+        return rows;
+    } finally {
+        connection.release();
+    }
+};
+
+publicModel.getSalesReturnProducts = async (product) => {
+    const connection = await db.getConnection();
+    try {
+        const listSql = `SELECT sr.id, JSON_OBJECT('id', prd.id, 'name', prd.name) AS product, JSON_OBJECT('id', c.id, 'name', c.name) AS customer
+                            FROM sales_return sr
+                                left join sales s on sr.sel_id = s.id
+                                left join production p on sr.p_id = p.id
+                                left join product prd on sr.product_id = prd.id
+                                left join customer c on sr.c_id = c.id
+                                    where prd.name like '%${product}%'
+                                        ORDER BY sr.id DESC`;
         const [rows] = await connection.query(listSql);
         return rows;
     } finally {
@@ -77,43 +153,50 @@ publicModel.getAllStatsCount = async (by, type, id) => {
 
     const queries = [
         {
-            sql: `SELECT COUNT(DISTINCT id) AS subTitle FROM customer`,
+            sql: `SELECT COUNT(DISTINCT id) AS value FROM customer`,
             title: "Customers",
-            image: "./images/customer.png"
+            icon: `<FileText size={28} color="#fff" />`,
+            bgColor: '#3FB6D9',
         },
         {
-            sql: `SELECT COUNT(DISTINCT id) AS subTitle FROM supplier`,
-            title: "Suppliers",
-            image: "./images/supplier.png"
+            sql: `SELECT COUNT(DISTINCT id) AS value FROM supplier`,
+            title: 'Supplier',
+            icon: ` <FileText size={28} color="#fff" />`,
+            bgColor: '#3EB780',
         },
         {
-            sql: `SELECT SUM(CAST(qty AS DECIMAL(10,2)) * CAST(s_price AS DECIMAL(10,2))) AS subTitle FROM sales WHERE s_date >= CURDATE() - INTERVAL 30 DAY`,
+            sql: `SELECT SUM(CAST(qty AS DECIMAL(10,2)) * CAST(s_price AS DECIMAL(10,2))) AS value FROM sales WHERE s_date >= CURDATE() - INTERVAL 90 DAY`,
             title: "Total Sales",
-            image: "./images/sales.png"
+            icon: ` <FileText size={28} color="#fff" />`,
+            bgColor: '#FFA73B',
         },
         {
-            sql: `SELECT SUM(CAST(r_qty AS DECIMAL(10,2)) * CAST(s_price AS DECIMAL(10,2))) AS subTitle FROM sales_return WHERE created_on >= CURDATE() - INTERVAL 30 DAY`,
+            sql: `SELECT SUM(CAST(r_qty AS DECIMAL(10,2)) * CAST(s_price AS DECIMAL(10,2))) AS value FROM sales_return WHERE created_on >= CURDATE() - INTERVAL 90 DAY`,
             title: "Total Sales Return",
-            image: "./images/sales-return.png"
+            icon: ` <RefreshCw size={28} color="#fff" />`,
+            bgColor: '#0B1C3F'
         },
         {
-            sql: `SELECT SUM(CAST(qty AS DECIMAL(10,2)) * CAST(price AS DECIMAL(10,2))) AS subTitle FROM purchase WHERE p_date >= CURDATE() - INTERVAL 30 DAY`,
+            sql: `SELECT SUM(CAST(qty AS DECIMAL(10,2)) * CAST(price AS DECIMAL(10,2))) AS value FROM purchase WHERE p_date >= CURDATE() - INTERVAL 90 DAY`,
             title: "Total Purchase",
-            image: "./images/buy.png"
+            icon: `<Gift size={28} color="#fff" />`,
+            bgColor: '#009688'
         },
         {
-            sql: `SELECT SUM(CAST(r_qty AS DECIMAL(10,2)) * CAST(price AS DECIMAL(10,2))) AS subTitle FROM purchase_return WHERE created_on >= CURDATE() - INTERVAL 30 DAY`,
+            sql: `SELECT SUM(CAST(r_qty AS DECIMAL(10,2)) * CAST(price AS DECIMAL(10,2))) AS value FROM purchase_return WHERE created_on >= CURDATE() - INTERVAL 90 DAY`,
             title: "Total Purchase Return",
-            image: "./images/buy-return.png"
+            icon: `<Shield size={28} color="#fff" />`,
+            bgColor: '#2563EB'
         },
     ];
 
     try {
         const results = await Promise.all(
             queries.map(q => connection.query(q.sql).then(([rows]) => ({
-                images: q.image,
+                icon: q.icon,
+                bgColor: q.bgColor,
                 title: q.title,
-                subTitle: Number(rows[0].subTitle) || 0
+                value: Number(rows[0].value) || 0
             })))
         );
 
@@ -163,6 +246,37 @@ publicModel.getProductionSummary = async (by, type, id) => {
 
     try {
         const [result] = await connection.query(listSql, [id]);
+        return result;
+    } finally {
+        connection.release();
+    }
+};
+
+
+publicModel.getProductNameByType = async (product, type) => {
+    const connection = await db.getConnection();
+
+    const purchaseProductSql = `select p.id, p.name from purchase pr 
+                                left join product p on pr.p_id = p.id where p.name like '%${product}%' and p.type = 'purchase' group by p.id`;
+    const purchaseReturnSql = `select p.id, p.name from purchase_return pr 
+                                left join product p on pr.p_id = p.id where p.name like '%${product}%' and p.type = 'purchase' group by p.id`;
+    const salesProductSql = `select p.id, p.name from sales s 
+                                left join product p on s.p_id = p.id where p.name like '%${product}%' and p.type = 'sales' group by p.id`;
+    const salesReturnSql = `select p.id, p.name from sales_return sr 
+                                left join product p on sr.product_id = p.id where p.name like '%${product}%' and p.type = 'sales' group by p.id`;
+
+    let listSql = ''
+    if (type == 'purchase') {
+        listSql = purchaseProductSql
+    } else if (type == 'purchase_return') {
+        listSql = purchaseReturnSql
+    } else if (type == 'sales') {
+        listSql = salesProductSql
+    } else if (type == 'sales_return') {
+        listSql = salesReturnSql
+    }
+    try {
+        const [result] = await connection.query(listSql);
         return result;
     } finally {
         connection.release();

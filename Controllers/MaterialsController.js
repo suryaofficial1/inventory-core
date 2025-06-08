@@ -11,27 +11,30 @@ materialsController.upsertMaterial = async (req, res) => {
         const error = validationService.validateRequired(req.body, [
             "productionId",
             "product",
+            "supplier",
             "mqty",
             "mPrice",
-            // "rqty",
-            // "rPrice",
-            // "lqty",
-            // "lPrice"
         ]);
-        if(error.length) {
+        if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
 
         const reqObj = {
             productionId: req.body.productionId,
             product: req.body.product,
+            supplier: req.body.supplier,
             mqty: req.body.mqty,
             mPrice: req.body.mPrice,
-            rqty: req.body.rqty,
-            rPrice: req.body.rPrice,
-            lqty: req.body.lqty,
-            lPrice: req.body.lPrice,
+            rqty: req.body.rqty || 0,
+            rPrice: req.body.rPrice || 0,
+            lqty: req.body.lqty || 0,
+            lPrice: req.body.lPrice || 0,
             id: req.params.id ? req.params.id : null
+        }
+
+        const isExists = await materialsModel.getMaterialsByProductionId(req.body.productionId, req.body.product, req.body.supplier);
+        if (isExists.length) {
+            return res.send(getErrorObject(400, 'Bad request', 'Material already exists'));
         }
         const results = await materialsModel.upsertMaterial(reqObj);
         return res.send(getSuccessObject(results));
@@ -72,15 +75,29 @@ materialsController.deleteMaterial = async (req, res) => {
 };
 materialsController.getAvailableProductQty = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id']);
+        const error = validationService.validateRequired(req.params, ['id', 'sId']);
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
-       const result = await materialsModel.getAvailableProductQty(req.params.id);
+        const result = await materialsModel.getAvailableProductQty(req.params);
         return res.send(getSuccessObject(result));
     } catch (err) {
         console.error(err);
         res.send(getErrorObject(500, "Internal Server Error getAvailableProductQty", err));
+    }
+};
+
+materialsController.getUsedMaterialsByProductOnProduction = async (req, res) => {
+    try {
+        const error = validationService.validateRequired(req.params, ['productId', 'id']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const result = await materialsModel.getUsedMaterialsByProductOnProduction(req.params);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        console.error(err);
+        res.send(getErrorObject(500, "Internal Server Error getUsedMaterialsByProductOnProduction", err));
     }
 };
 

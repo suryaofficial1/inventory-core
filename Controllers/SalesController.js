@@ -8,8 +8,9 @@ const salesController = {};
 salesController.upsertSales = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.body, [
-            "customer",
+            "productionId",
             "product",
+            "customer",
             "invoiceNo",
             "pDesc",
             "salesDate",
@@ -23,6 +24,7 @@ salesController.upsertSales = async (req, res) => {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
         const reqObj = {
+            productionId: req.body.productionId,
             customer: req.body.customer,
             product: req.body.product,
             invoiceNo: req.body.invoiceNo,
@@ -36,21 +38,30 @@ salesController.upsertSales = async (req, res) => {
         }
 
         // Fetch product availability details
-        const productDetails = await salesModel.getProductDetails(req.body.product);
+
+        const reqBody = {
+            productId: req.body.product,
+            type: 'sales',
+            customerId: 0
+        };
+
+        const isExitProductOnSales = await salesModel.getSalesDetails(req.body.product, req.body.customer);
+        const productDetails = await salesModel.getSalesItemAvailableQty(reqBody);
 
         // Validate product existence and stock availability
-        if (productDetails.length == 0 || productDetails.status === 0) {
-            return res.send(getErrorObject(400, 'Bad request', 'Product is not available.'));
 
+        if (req.params.id == null && isExitProductOnSales?.id) {
+            return res.send(getErrorObject(400, 'Bad request', 'Product is already in sales.'));
         }
-        // console.log("Number(productAvailability.availableQty) > Number(req.body.qty)",  Number(req.body.qty) != Number(productAvailability.availableQty), Number(productAvailability.availableQty) , Number(req.body.qty), Number(req.body.qty) > Number(productAvailability.availableQty))
-        if ( Number(req.body.qty) != Number(productDetails.availableQty) && Number(req.body.qty) > Number(productDetails.availableQty)) {
+
+        if (Number(productDetails.availableQty == 0)) {
+            return res.send(getErrorObject(400, 'Bad request', 'Stock is not available.'));
+        }
+        // Validate product existence and stock availability
+
+        if (Number(req.body.qty) != Number(productDetails.availableQty) && Number(req.body.qty) > Number(productDetails.availableQty)) {
             return res.send(getErrorObject(400, 'Bad request', `Only ${productDetails.availableQty} units are in stock. Please enter a valid quantity.`));
         }
-        // if (Number(req.body.qty) >= Number(productAvailability.availableQty)) {
-        //     return res.send(getErrorObject(400, 'Bad request', `Only ${productAvailability.availableQty} units are in stock. Please enter a valid quantity.`));
-        // }
-
         const results = await salesModel.upsertSales(reqObj);
         return res.send(getSuccessObject(results));
     } catch (err) {
@@ -153,6 +164,7 @@ salesController.deleteSalesDetails = async (req, res) => {
 salesController.upsertSalesReturn = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.body, [
+            "productionId",
             "salesId",
             "customer",
             "product",
@@ -167,24 +179,30 @@ salesController.upsertSalesReturn = async (req, res) => {
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
-        const isExitSalesDetails = await salesModel.getSalesByInvoiceNo(req.body.invoiceNo, req.body.product);
-        if (!isExitSalesDetails.length) {
-            return res.send(getErrorObject(404, 'Sales details not found'));
-        }
 
-        // Fetch product availability details
-        //const productAvailability = await publicModel.getAvailableProductQty('sales', 'return', req.body.product);
+        const reqBody = {
+            productId: req.body.product,
+            type: 'sales_return',
+            customerId: req.body.customer || 0
+        };
+
+        const productDetails = await salesModel.getSalesItemAvailableQty(reqBody);
 
         // Validate product existence and stock availability
-        // if (!productAvailability || productAvailability.status === 0) {
-        //     return res.send(getErrorObject(400, 'Bad request', 'Product is not available.'));
 
-        // }
-        // if ( Number(req.body.qty) != Number(productAvailability.availableQty) && Number(req.body.qty) > Number(productAvailability.availableQty)) {
-        //     return res.send(getErrorObject(400, 'Bad request', `Only ${productAvailability.availableQty} units are in stock. Please enter a valid quantity.`));
-        // }
+        if (req.params.id == null && !productDetails.salesId) {
+            return res.send(getErrorObject(400, 'Bad request', 'Product is not available.'));
+        }
+        if (Number(productDetails.availableQty == 0)) {
+            return res.send(getErrorObject(400, 'Bad request', 'Stock is not available.'));
+        }
+        if (Number(req.body.qty) != Number(productDetails.availableQty) && Number(req.body.qty) > Number(productDetails.availableQty)) {
+            return res.send(getErrorObject(400, 'Bad request', `Only ${productDetails.availableQty} units are in stock. Please enter a valid quantity.`));
+        }
+
 
         const reqObj = {
+            productionId: req.body.productionId,
             salesId: req.body.salesId,
             customer: req.body.customer,
             product: req.body.product,
@@ -196,6 +214,7 @@ salesController.upsertSalesReturn = async (req, res) => {
             status: req.body.status,
             id: req.params.id ? req.params.id : null
         }
+
         const results = await salesModel.upsertSalesReturn(reqObj);
         return res.send(getSuccessObject(results));
     } catch (err) {
@@ -217,17 +236,36 @@ salesController.deleteSalesReturn = async (req, res) => {
     }
 };
 
-salesController.getProductDetails = async (req, res) => {
+salesController.getSalesItemAvailableQty = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.params, ['id']);
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
-       const result = await salesModel.getProductDetails(req.params.id);
+        const reqBody = {
+            productId: req.params.id,
+            type: req.query.type || '',
+            customerId: req.query.customer || 0
+        };
+        const result = await salesModel.getSalesItemAvailableQty(reqBody);
         return res.send(getSuccessObject(result));
     } catch (err) {
         console.error(err);
-        res.send(getErrorObject(500, "Internal Server Error getProductDetails", err));
+        res.send(getErrorObject(500, "Internal Server Error getSalesItemAvailableQty", err));
+    }
+};
+
+salesController.getExitingSalesProductDetails = async (req, res) => {
+    try {
+        const error = validationService.validateRequired(req.params, ['id', 'cId', 'type']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const result = await salesModel.getExitingSalesProductDetails(req.params.id, req.params.cId, req.params.type);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        console.error(err);
+        res.send(getErrorObject(500, "Internal Server Error getExitingSalesProductDetails", err));
     }
 };
 

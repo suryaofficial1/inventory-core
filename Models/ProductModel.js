@@ -44,7 +44,8 @@ productModel.upsertProduct = async (body) => {
 };
 
 const product_config = [
-    { inputKey: "name", column: 'name', condition: conditionEnum.CONTAIN },
+    { inputKey: "productId", column: 'id', condition: conditionEnum.EQ },
+    { inputKey: "type", column: 'type', condition: conditionEnum.CONTAIN },
 ]
 
 productModel.getProducts = async (reqData) => {
@@ -67,6 +68,24 @@ productModel.getProducts = async (reqData) => {
         connection.release();
     }
 };
+
+productModel.checkProductExists = async (name, type, id = null) => {
+    const connection = await db.getConnection();
+    try {
+        let sql = `SELECT id FROM product WHERE name = ? AND type = ?`;
+        const params = [name, type];
+
+        if (id !== null) {
+            sql += ` AND id != ?`;
+            params.push(id);
+        }
+        const [[result]] = await connection.query(sql, params);
+        return result || null;
+    } finally {
+        connection.release();
+    }
+};
+
 
 productModel.deleteProduct = async (id) => {
     const connection = await db.getConnection();

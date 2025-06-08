@@ -6,7 +6,7 @@ const productController = {};
 
 productController.upsertProduct = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.body, ["name", "description", "qty", "price", "unit", "type", "status"]);
+        const error = validationService.validateRequired(req.body, ["name", "unit", "type"]);
 
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
@@ -20,6 +20,11 @@ productController.upsertProduct = async (req, res) => {
             type: req.body.type,
             status: req.body.status,
             id: req.params.id
+        }
+
+        const isExists = await productModel.checkProductExists(req.body.name, req.body.type, req.params.id);
+        if (isExists) {
+            return res.send(getErrorObject(400, 'Product already exists please check product details!', isExists));
         }
         const results = await productModel.upsertProduct(reqObj);
         return res.send(getSuccessObject(results));

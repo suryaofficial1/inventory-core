@@ -78,6 +78,20 @@ productionController.getProductionDetail = async (req, res) => {
     }
 };
 
+productionController.getProductionDetailByProduct = async (req, res) => {
+    try {
+        const error = validationService.validateRequired(req.params, ['id']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const result = await productionModel.getProductionDetailByProduct(req.params.id);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        console.error(err);
+        res.send(getErrorObject(500, "Internal Server Error getProductionDetailByProduct", err));
+    }
+};
+
 productionController.deleteProduction = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.params, ['id']);

@@ -47,7 +47,7 @@ productionModel.upsertProduction = async (body) => {
 
 const production_config = [
     { inputKey: "cName", column: 'c.name', condition: conditionEnum.CONTAIN },
-    { inputKey: "pName", column: 'p.product', condition: conditionEnum.CONTAIN },
+    { inputKey: "pName", column: 'p.product', condition: conditionEnum.EQ },
 ];
 
 productionModel.getProductions = async (reqData) => {
@@ -62,6 +62,7 @@ productionModel.getProductions = async (reqData) => {
         // Total count query
         const countSql = `SELECT COUNT(*) as total 
                           FROM production p
+                          left join product pr on p.product = pr.id
                           LEFT JOIN customer c ON p.c_id = c.id 
                           ${whereCondition} ${filter}`;
 
@@ -71,18 +72,18 @@ productionModel.getProductions = async (reqData) => {
                 p.id, 
                 JSON_OBJECT('id', c.id, 'name', c.name) AS customer, 
                 p.m_date AS manufacturingDate,
-                p.product, 
+                JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, 
                 p.unit, 
                 p.qty, 
                 p.operatorName, 
                 p.p_desc AS pDesc, 
                 p.status
             FROM production p 
+            left join product pr on p.product = pr.id
             LEFT JOIN customer c ON p.c_id = c.id
             ${whereCondition} ${filter}
             ORDER BY p.id DESC
-            LIMIT ${index}, ${pageSize}
-        `;
+            LIMIT ${index}, ${pageSize}`;
 
         const [rows] = await connection.query(listSql);
         const [[count]] = await connection.query(countSql);
@@ -94,11 +95,12 @@ productionModel.getProductions = async (reqData) => {
 
         if (productionIds.length) {
             const [materials] = await connection.query(`
-                SELECT m.id, m.productionId, JSON_OBJECT('id', p.id, 'product', p.product) AS product, m.mqty, m.mPrice, m.rqty, m.rPrice, m.lqty, m.lPrice 
+                SELECT m.id, m.productionId,  JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, m.mqty,
+                             m.mPrice, m.rqty, m.rPrice, m.lqty, m.lPrice, JSON_OBJECT('id', s.id, 'name', s.name) AS supplier
                 FROM materials m
-                LEFT JOIN purchase p ON m.product = p.id
-                WHERE productionId IN (?)
-            `, [productionIds]);
+                    LEFT JOIN product pr ON m.product = pr.id
+                    left join supplier s on m.s_id = s.id
+                     WHERE productionId IN (?) `, [productionIds]);
 
             // Group materials by productionId
             materialsMap = materials.reduce((acc, mat) => {
@@ -119,43 +121,40 @@ productionModel.getProductions = async (reqData) => {
         connection.release();
     }
 };
-// productionModel.getProductions = async (reqData) => {
-//     const connection = await db.getConnection();
-//     const filter = filterService.generateFilterSQL(reqData, production_config);
-//     const whereCondition = filter.trim().length > 0 ? ' WHERE ' : '';
 
-//     let pageSize = reqData.per_page;
-//     let index = (reqData.page - 1) * pageSize;
-//     try {
-//         const countSql = `SELECT COUNT(*) as total FROM production p
-//                             LEFT JOIN customer c ON p.c_id = c.id ${whereCondition} ${filter}`;
-//         const listSql = `SELECT p.id, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, p.m_date AS manufacturingDate,
-//                            p.product, p.unit, p.qty, p.operatorName, p.p_desc AS pDesc, p.status
-//                             FROM production p 
-//                             LEFT JOIN customer c ON p.c_id = c.id
-//         ${whereCondition} ${filter} ORDER BY p.id DESC LIMIT ${index}, ${pageSize}`;
-
-//         const [rows] = await connection.query(listSql);
-//         const [[count]] = await connection.query(countSql);
-//         const response = { rows, ...count };
-//         return response;
-//     } finally {
-//         connection.release();
-//     }
-// };
 productionModel.getProductionDetail = async (id) => {
     const connection = await db.getConnection();
-    
+
     try {
         const listSql = `SELECT p.id, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, p.m_date AS pDate,
-                           p.product, p.unit, p.qty, p.operatorName, p.p_desc AS pDesc, p.status, count(m.id) as materialCount
+                         JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, p.unit, p.qty, p.operatorName, p.p_desc AS pDesc, p.status, count(m.id) as materialCount
                             FROM production p 
+                            left join product pr on p.product = pr.id
                             LEFT JOIN customer c ON p.c_id = c.id
                             LEFT JOIN materials m ON p.id = m.productionId
-                            where p.id = ${id}`;
+                            where p.id = ${id}  `;
 
         const [[rows]] = await connection.query(listSql);
-       
+
+        return rows;
+    } finally {
+        connection.release();
+    }
+};
+
+productionModel.getProductionDetailByProduct = async (id) => {
+    const connection = await db.getConnection();
+    try {
+        const listSql = `select p.id, JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, 
+                            p.qty, p.unit, p.operatorName, p.m_date manufacturingDate, p.status
+                                from production p
+                                    left join product pr on p.product = pr.id
+                                    left join customer c on p.c_id = c.id
+                                     where pr.id = ${id}
+                                        ORDER BY p.id DESC`;
+
+        const [[rows]] = await connection.query(listSql);
+
         return rows;
     } finally {
         connection.release();
@@ -166,7 +165,7 @@ productionModel.updateProductionStatus = async (status, id) => {
     const connection = await db.getConnection();
     try {
         const sql = `UPDATE production set status = ? WHERE id = ?`;
-         await connection.query(sql, [status,id]);
+        await connection.query(sql, [status, id]);
         return true;
     } finally {
         connection.release();

@@ -28,7 +28,7 @@ publicController.getProducts = async (req, res) => {
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
-        const result = await publicModel.getProducts(req.params.type);
+        const result = await publicModel.getProducts(req.params.type, req.query.product);
         return res.send(getSuccessObject(result));
     } catch (err) {
         console.error(err);
@@ -50,6 +50,33 @@ publicController.getProductionProducts = async (req, res) => {
         return res.send(getSuccessObject(result));
     } catch (err) {
         res.send(getErrorObject(500, "Internal Server Error in getProductionProducts", err));
+    }
+};
+
+publicController.getProductionProductsDetails = async (req, res) => {
+    try {
+        const result = await publicModel.getProductionProductsDetails(req.query.product, req.query.status);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        res.send(getErrorObject(500, "Internal Server Error in getProductionProductsDetails", err));
+    }
+};
+
+publicController.getSalesProducts = async (req, res) => {
+    try {
+        const result = await publicModel.getSalesProducts(req.query.product, req.query.cId);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        res.send(getErrorObject(500, "Internal Server Error in getSalesProducts", err));
+    }
+};
+
+publicController.getSalesReturnProducts = async (req, res) => {
+    try {
+        const result = await publicModel.getSalesReturnProducts(req.query.product);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        res.send(getErrorObject(500, "Internal Server Error in getSalesReturnProducts", err));
     }
 };
 
@@ -93,6 +120,19 @@ publicController.getProductionSummary = async (req, res) => {
     }
 };
 
+
+publicController.getProductNameByType = async (req, res, next) => {
+    try {
+        const error = validationService.validateRequired(req.query, ['product', 'type']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const result = await publicModel.getProductNameByType(req.query.product, req.query.type);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        res.send(getErrorObject(500, "Internal Server Error in getProductNameByType", err));
+    }
+};
 
 export default publicController;
 

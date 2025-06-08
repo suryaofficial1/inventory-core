@@ -13,7 +13,11 @@ publicRouter.get('/production-products-list', authorize, publicController.getPro
 publicRouter.get('/all-stats-count', authorize ,publicController.getAllStatsCount);
 publicRouter.get('/top-5-products', authorize ,publicController.getTop5Products);
 publicRouter.get('/production-summary', authorize ,publicController.getProductionSummary);
+publicRouter.get('/production-products-details', authorize, publicController.getProductionProductsDetails);
+publicRouter.get('/sales-products-list', authorize, publicController.getSalesProducts);
+publicRouter.get('/sales-return-products-list', authorize, publicController.getSalesReturnProducts);
 
+publicRouter.get('/product-name-by-type', authorize, publicController.getProductNameByType);
 export default publicRouter
 
 

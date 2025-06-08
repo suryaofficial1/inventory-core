@@ -56,5 +56,14 @@ reportController.getStockReports = async (req, res) => {
     }
 };
 
+reportController.getProductTimeline = async (req, res) => {
+    try {
+        const result = await reportModel.getProductTimeline(req.params);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        res.send(getErrorObject(500, "Internal Server Error getProductTimeline", err));
+    }
+};
+
 
 export default reportController;

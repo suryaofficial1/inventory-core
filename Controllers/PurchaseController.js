@@ -1,3 +1,4 @@
+import materialsModel from "../Models/MaterialsModel.js";
 import publicModel from "../Models/PublicModel.js";
 import purchaseModel from "../Models/PurchaseModel.js";
 import validationService from "../service/validation.service.js";
@@ -39,6 +40,19 @@ purchaseController.upsertPurchase = async (req, res, next) => {
             expiryDate: req.body.expiryDate,
             id: req.params.id ? req.params.id : null
         };
+
+        const reqBody = {
+            id: req.body.product,
+            sId: req.body.supplier,
+            type: "purchase"
+        }
+
+        const isProductExit = await purchaseModel.getPurchaseDetailsByProductId(reqBody);
+
+        if (!req.params.id && isProductExit.id) {
+            return res.send(getErrorObject(400, 'Bad request', 'Product is already purchase list.'));
+        }
+
         // Perform purchase record insertion/update
         const result = await purchaseModel.upsertPurchase(purchaseData);
         return res.send(getSuccessObject(result));
@@ -77,19 +91,6 @@ purchaseController.getPurchaseReturnList = async (req, res) => {
     }
 };
 
-
-purchaseController.getPurchaseByInvoiceNo = async (req, res) => {
-    try {
-        const error = validationService.validateRequired(req.query, ['invoiceNo']);
-        if (error.length) {
-            return res.send(getErrorObject(400, 'Bad request', error));
-        }
-        const result = await purchaseModel.getPurchaseByInvoiceNo(req.query.invoiceNo);
-        return res.send(getSuccessObject(result));
-    } catch (err) {
-        res.send(getErrorObject(500, "Internal Server Error", err));
-    }
-};
 purchaseController.getPurchaseByProduct = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.query, ['product']);
@@ -100,6 +101,18 @@ purchaseController.getPurchaseByProduct = async (req, res) => {
         return res.send(getSuccessObject(result));
     } catch (err) {
         res.send(getErrorObject(500, "Internal Server Error : getPurchaseByProduct", err));
+    }
+};
+purchaseController.getPurchaseReturnByProduct = async (req, res) => {
+    try {
+        const error = validationService.validateRequired(req.query, ['product']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const result = await purchaseModel.getPurchaseReturnByProduct(req.query);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        res.send(getErrorObject(500, "Internal Server Error : getPurchaseReturnByProduct", err));
     }
 };
 
@@ -146,19 +159,23 @@ purchaseController.upsertPurchaseReturn = async (req, res) => {
             "price",
             "unit",
         ]);
-        const isExitPurchaseDetails = await purchaseModel.getPurchaseByProduct(req.body.product);
-        if (!isExitPurchaseDetails.length) {
-            return res.send(getErrorObject(404, 'Purchase details not found'));
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+
+        const reqBody = {
+            id: req.body.product,
+            sId: req.body.supplier
         }
         // Fetch product availability details
-        const productAvailability = await publicModel.getAvailableProductQty('purchase', 'return', req.body.purchaseId);
+        const productAvailability = await materialsModel.getAvailableProductQty(reqBody);
 
         // Validate product existence and stock availability
-        if (!productAvailability || productAvailability.status === 0) {
+        if (!productAvailability) {
             return res.send(getErrorObject(400, 'Bad request', 'Product is not available.'));
 
         }
-        if (Number(req.body.qty) != Number(productAvailability.availableQty) && Number(req.body.qty) > Number(productAvailability.availableQty)) {
+        if (Number(req.body.qty) > Number(productAvailability.availableQty)) {
             return res.send(getErrorObject(400, 'Bad request', `Only ${productAvailability.availableQty} units are in stock. Please enter a valid quantity.`));
         }
         const reqObj = {
@@ -173,10 +190,9 @@ purchaseController.upsertPurchaseReturn = async (req, res) => {
             desc: req.body.desc,
             id: req.params.id ? req.params.id : null
         }
-        const results = await purchaseModel.upsertPurchaseReturn(reqObj);
-        return res.send(getSuccessObject(results));
+        await purchaseModel.upsertPurchaseReturn(reqObj);
+        return res.send(getSuccessObject());
     } catch (err) {
-        console.error("hhvhgvhgvhgvhgvhg", err);
         res.send(getErrorObject(500, "Internal Server Error", err));
     }
 };
@@ -196,5 +212,30 @@ purchaseController.deletePurchaseReturn = async (req, res) => {
     }
 };
 
+purchaseController.getPurchaseDetailsByProduct = async (req, res) => {
+    try {
+        const error = validationService.validateRequired(req.query, ['product', 'type']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const result = await purchaseModel.getPurchaseDetailsByProduct(req.query);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        res.send(getErrorObject(500, "Internal Server Error : getPurchaseDetailsByProduct", err));
+    }
+};
+
+purchaseController.getPurchaseDetailsByProductId = async (req, res) => {
+    try {
+        const error = validationService.validateRequired(req.params, ['id', 'sId', 'type']);
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+        const result = await purchaseModel.getPurchaseDetailsByProductId(req.params);
+        return res.send(getSuccessObject(result));
+    } catch (err) {
+        res.send(getErrorObject(500, "Internal Server Error : getPurchaseDetailsByProductId", err));
+    }
+};
 
 export default purchaseController;
