@@ -8,8 +8,8 @@ const conditionEnum = filterService.condition;
 const sales_config = [
     { inputKey: "customer", column: 'c.id', condition: conditionEnum.EQ },
     { inputKey: "product", column: 'p.name', condition: conditionEnum.CONTAIN },
-    { inputKey: "startDate", column: 's.s_date', condition: conditionEnum.GREATER_THAN_EQUAL },
-    { inputKey: "endDate", column: 's.s_date', condition: conditionEnum.LESS_THAN_EQUAL },
+    { inputKey: "startDate", column: 'DATE(s.s_date)', condition: conditionEnum.GREATER_THAN_EQUAL },
+    { inputKey: "endDate", column: 'DATE(s.s_date)', condition: conditionEnum.LESS_THAN_EQUAL },
 ];
 
 reportModel.getSalesOverview = async (reqData) => {
@@ -49,8 +49,8 @@ reportModel.getSalesOverview = async (reqData) => {
 const sales_return_config = [
     { inputKey: "customer", column: 'c.id', condition: conditionEnum.EQ },
     { inputKey: "product", column: 'p.name', condition: conditionEnum.CONTAIN },
-    { inputKey: "startDate", column: 's.created_on', condition: conditionEnum.GREATER_THAN_EQUAL },
-    { inputKey: "endDate", column: 's.created_on', condition: conditionEnum.LESS_THAN_EQUAL },
+    { inputKey: "startDate", column: 'DATE(s.created_on)', condition: conditionEnum.GREATER_THAN_EQUAL },
+    { inputKey: "endDate", column: 'DATE(s.created_on)', condition: conditionEnum.LESS_THAN_EQUAL },
 ];
 reportModel.getSalesReturnOverview = async (reqData) => {
     const connection = await db.getConnection();
@@ -94,8 +94,8 @@ reportModel.getSalesReturnOverview = async (reqData) => {
 const purchase_config = [
     { inputKey: "supplier", column: 's.id', condition: conditionEnum.EQ },
     { inputKey: "product", column: 'prd.name', condition: conditionEnum.CONTAIN },
-    { inputKey: "startDate", column: 'pr.p_date', condition: conditionEnum.GREATER_THAN_EQUAL },
-    { inputKey: "endDate", column: 'pr.p_date', condition: conditionEnum.LESS_THAN_EQUAL },
+    { inputKey: "startDate", column: 'DATE(pr.p_date)', condition: conditionEnum.GREATER_THAN_EQUAL },
+    { inputKey: "endDate", column: 'DATE(pr.p_date)', condition: conditionEnum.LESS_THAN_EQUAL },
 ];
 
 reportModel.getPurchaseReports = async (reqData) => {
@@ -131,8 +131,8 @@ reportModel.getPurchaseReports = async (reqData) => {
 const purchase_return_config = [
     { inputKey: "supplier", column: 's.id', condition: conditionEnum.EQ },
     { inputKey: "product", column: 'prd.name', condition: conditionEnum.CONTAIN },
-    { inputKey: "startDate", column: 'pr.created_on', condition: conditionEnum.GREATER_THAN_EQUAL },
-    { inputKey: "endDate", column: 'pr.created_on', condition: conditionEnum.LESS_THAN_EQUAL },
+    { inputKey: "startDate", column: 'DATE(pr.created_on)', condition: conditionEnum.GREATER_THAN_EQUAL },//pr.created_on', condition: conditionEnum.GREATER_THAN_EQUAL },
+    { inputKey: "endDate", column: 'DATE(pr.created_on)', condition: conditionEnum.LESS_THAN_EQUAL },
 ];
 reportModel.getPurchaseReturnReports = async (reqData) => {
     const connection = await db.getConnection();
@@ -157,6 +157,7 @@ reportModel.getPurchaseReturnReports = async (reqData) => {
                                         WHERE  ${whereCondition}`;
         const [rows] = await connection.query(listSql);
         const [[total]] = await connection.query(totalSql);
+        console.log("list sql ", listSql);
         return { rows, total };
     } catch (error) {
         console.log(error);
@@ -174,12 +175,12 @@ reportModel.getStockReports = async (reqData) => {
         { inputKey: "product", column: 'prd.name', condition: conditionEnum.CONTAIN },
         ...(reqData.type === "sales"
             ? [
-                { inputKey: "startDate", column: 'p.m_date', condition: conditionEnum.GREATER_THAN_EQUAL },
-                { inputKey: "endDate", column: 'p.m_date', condition: conditionEnum.LESS_THAN_EQUAL }
+                { inputKey: "startDate", column: 'DATE(p.m_date)', condition: conditionEnum.GREATER_THAN_EQUAL },
+                { inputKey: "endDate", column: 'DATE(p.m_date)', condition: conditionEnum.LESS_THAN_EQUAL }
             ]
             : [
-                { inputKey: "startDate", column: 'pr.created_on', condition: conditionEnum.GREATER_THAN_EQUAL },
-                { inputKey: "endDate", column: 'pr.created_on', condition: conditionEnum.LESS_THAN_EQUAL }
+                { inputKey: "startDate", column: 'DATE(pr.created_on)', condition: conditionEnum.GREATER_THAN_EQUAL },
+                { inputKey: "endDate", column: 'DATE(pr.created_on)', condition: conditionEnum.LESS_THAN_EQUAL }
             ])
     ];
 
