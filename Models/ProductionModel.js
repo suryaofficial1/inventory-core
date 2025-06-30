@@ -9,11 +9,11 @@ productionModel.upsertProduction = async (body) => {
     const connection = await db.getConnection();
 
     const updateSql = `UPDATE production SET c_id = ?, m_date = ?, product = ?, unit = ?, qty= ?, operatorName = ? ,p_desc = ? ,status = ? WHERE id = ?`;
-    const insertSql = `INSERT INTO production (c_id, m_date, product, unit, qty, operatorName,  p_desc, status, created_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
+    const insertSql = `INSERT INTO production (c_id, batchNo, m_date, product, unit, qty, operatorName,  p_desc, status, created_on) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`;
 
     try {
         if (body.id) {
-            const [result] = await connection.query(updateSql, [
+           await connection.query(updateSql, [
                 body.customer,
                 body.manufacturingDate,
                 body.product,
@@ -28,6 +28,7 @@ productionModel.upsertProduction = async (body) => {
         } else {
             const [insertResult] = await connection.query(insertSql, [
                 body.customer,
+                body.batchNo,
                 body.manufacturingDate,
                 body.product,
                 body.unit,
@@ -70,6 +71,7 @@ productionModel.getProductions = async (reqData) => {
         const listSql = `
             SELECT 
                 p.id, 
+                p.batchNo,
                 JSON_OBJECT('id', c.id, 'name', c.name) AS customer, 
                 p.m_date AS manufacturingDate,
                 JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, 
@@ -126,7 +128,7 @@ productionModel.getProductionDetail = async (id) => {
     const connection = await db.getConnection();
 
     try {
-        const listSql = `SELECT p.id, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, p.m_date AS pDate,
+        const listSql = `SELECT p.id, p.batchNo, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, p.m_date AS pDate,
                          JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, p.unit, p.qty, p.operatorName, p.p_desc AS pDesc, p.status, count(m.id) as materialCount
                             FROM production p 
                             left join product pr on p.product = pr.id
@@ -142,18 +144,18 @@ productionModel.getProductionDetail = async (id) => {
     }
 };
 
-productionModel.getProductionDetailByProduct = async (id) => {
+productionModel.getProductionDetailByProduct = async (id, batchNo) => {
     const connection = await db.getConnection();
     try {
-        const listSql = `select p.id, JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, 
+        const listSql = `select p.id, p.batchNo, JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, 
                             p.qty, p.unit, p.operatorName, p.m_date manufacturingDate, p.status
                                 from production p
                                     left join product pr on p.product = pr.id
                                     left join customer c on p.c_id = c.id
-                                     where pr.id = ${id}
+                                     where pr.id = ${id} and p.batchNo = ?
                                         ORDER BY p.id DESC`;
 
-        const [[rows]] = await connection.query(listSql);
+        const [[rows]] = await connection.query(listSql, [batchNo]);
 
         return rows;
     } finally {

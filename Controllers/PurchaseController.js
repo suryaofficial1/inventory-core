@@ -47,11 +47,11 @@ purchaseController.upsertPurchase = async (req, res, next) => {
             type: "purchase"
         }
 
-        const isProductExit = await purchaseModel.getPurchaseDetailsByProductId(reqBody);
+        // const isProductExit = await purchaseModel.getPurchaseDetailsByProductId(reqBody);
 
-        if (!req.params.id && isProductExit.id) {
-            return res.send(getErrorObject(400, 'Bad request', 'Product is already purchase list.'));
-        }
+        // if (!req.params.id && isProductExit.id) {
+        //     return res.send(getErrorObject(400, 'Bad request', 'Product is already purchase list.'));
+        // }
 
         // Perform purchase record insertion/update
         const result = await purchaseModel.upsertPurchase(purchaseData);
@@ -164,8 +164,9 @@ purchaseController.upsertPurchaseReturn = async (req, res) => {
         }
 
         const reqBody = {
-            id: req.body.product,
-            sId: req.body.supplier
+            productId: req.body.product,
+            sId: req.body.supplier,
+            purchaseId: req.body.purchaseId
         }
         // Fetch product availability details
         const productAvailability = await materialsModel.getAvailableProductQty(reqBody);
@@ -227,7 +228,7 @@ purchaseController.getPurchaseDetailsByProduct = async (req, res) => {
 
 purchaseController.getPurchaseDetailsByProductId = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id', 'sId', 'type']);
+        const error = validationService.validateRequired(req.params, ['purchaseId','productId', 'sId']);
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }

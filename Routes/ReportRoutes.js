@@ -10,7 +10,9 @@ reportRouter.get('/purchase', reportController.getPurchaseReports);
 reportRouter.get('/purchase-return', reportController.getPurchaseReturnReports);
 reportRouter.get('/stock', reportController.getStockReports);
 
-reportRouter.get('/timeline/:id/product/:type', reportController.getProductTimeline);
+reportRouter.get('/timeline/:id/product/:type/:supId/:batchNo', reportController.getProductTimeline);
+
+reportRouter.get('/product/stock/details', reportController.getProductStockDetails);
 
 
 export default reportRouter

@@ -21,6 +21,6 @@ purchaseRouter.delete('/return/:id', authorize, authorizeSuperAdmin, purchaseCon
 
 
 purchaseRouter.get('/details', authorize, purchaseController.getPurchaseDetailsByProduct);
-purchaseRouter.get('/:id/product/:sId/supplier/:type', authorize, purchaseController.getPurchaseDetailsByProductId);
+purchaseRouter.get('/:purchaseId/product/:productId/supplier/:sId', authorize, purchaseController.getPurchaseDetailsByProductId);
 export default purchaseRouter
 

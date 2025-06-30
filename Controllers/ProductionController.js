@@ -9,6 +9,7 @@ productionController.upsertProduction = async (req, res) => {
     try {
         const error = validationService.validateRequired(req.body, [
             "customer",
+            "batchNo",
             "manufacturingDate",
             "product",
             "qty",
@@ -18,8 +19,13 @@ productionController.upsertProduction = async (req, res) => {
             "status"
         ]);
 
+        if (error.length) {
+            return res.send(getErrorObject(400, 'Bad request', error));
+        }
+
         const reqObj = {
             customer: req.body.customer,
+            batchNo: req.body.batchNo,
             manufacturingDate: req.body.manufacturingDate,
             product: req.body.product,
             qty: req.body.qty,
@@ -28,6 +34,11 @@ productionController.upsertProduction = async (req, res) => {
             pDesc: req.body.pDesc,
             status: req.body.status,
             id: req.params.id ? req.params.id : null
+        }
+
+        const isExists = await productionModel.getProductionDetailByProduct(reqObj.product, reqObj.batchNo);
+        if (isExists) {
+            return res.send(getErrorObject(400, `Same product already exists on ${isExists.batchNo} batch Number`, `Same product already exists on ${isExists.batchNo} batch Number`));
         }
         const results = await productionModel.upsertProduction(reqObj);
         return res.send(getSuccessObject(results));
@@ -80,11 +91,11 @@ productionController.getProductionDetail = async (req, res) => {
 
 productionController.getProductionDetailByProduct = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id']);
+        const error = validationService.validateRequired(req.params, ['id', 'batchNo']);
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
-        const result = await productionModel.getProductionDetailByProduct(req.params.id);
+        const result = await productionModel.getProductionDetailByProduct(req.params.id, req.params.batchNo);
         return res.send(getSuccessObject(result));
     } catch (err) {
         console.error(err);

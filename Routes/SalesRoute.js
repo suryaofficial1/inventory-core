@@ -9,13 +9,11 @@ salesRouter.post('/sales', authorize, authorizeSuperAdmin, salesController.upser
 salesRouter.post('/sales/:id', authorize, authorizeSuperAdmin, salesController.upsertSales);
 salesRouter.delete('/sales/:id', authorize, authorizeSuperAdmin, salesController.deleteSales);
 
-salesRouter.get('/:id/product/availability', authorize, authorizeSuperAdmin, salesController.getSalesItemAvailableQty);
+salesRouter.get('/:id/product/:productionId/production/availability', authorize, authorizeSuperAdmin, salesController.getSalesItemAvailableQty);
 
-salesRouter.get('/product/:id/:cId/customer/:type', authorize, authorizeSuperAdmin, salesController.getExitingSalesProductDetails);
+salesRouter.get('/:salesId/product/:id/customer/:cId', authorize, authorizeSuperAdmin, salesController.getExitingSalesProductDetails);
 
 // Return
-salesRouter.get('/list-by-invoice', authorize, salesController.getSalesByInvoiceNo);
-salesRouter.get('/return-list-by-invoice', authorize, salesController.getSalesReturnByInvoiceNo);
 salesRouter.get('/return-list', authorize, salesController.getSalesReturnList);
 salesRouter.post('/upsert/return', authorize, authorizeSuperAdmin, salesController.upsertSalesReturn);
 salesRouter.post('/upsert/return/:id', authorize, authorizeSuperAdmin, salesController.upsertSalesReturn);

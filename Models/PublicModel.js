@@ -82,7 +82,7 @@ publicModel.getProductionProductsDetails = async (product, status) => {
         condition = ` and p.status = '${status}'`;
     }
     try {
-        const listSql = `select p.id, JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, 
+        const listSql = `select p.id, p.batchNo, JSON_OBJECT('id', pr.id, 'name', pr.name) AS product, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, 
                             p.qty, p.unit, p.operatorName, p.m_date manufacturingDate, p.status
                                 from production p
                                     left join product pr on p.product = pr.id
@@ -103,7 +103,7 @@ publicModel.getSalesProducts = async (product, cId) => {
         condition = ` and c.id = '${cId}'`;
     }
     try {
-        const listSql = `select s.id , s.productionId, JSON_OBJECT('id', p.id, 'name', p.name) AS product, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, s.qty, s.unit, s.invoiceNo, s.s_price 
+        const listSql = `select s.id, s.salesName, s.productionId, prd.batchNo,  JSON_OBJECT('id', p.id, 'name', p.name) AS product, JSON_OBJECT('id', c.id, 'name', c.name) AS customer, s.qty, s.unit, s.invoiceNo, s.s_price 
                                  FROM sales s
                                     LEFT JOIN production prd ON prd.id = s.productionId
                                     left join product p on s.p_id = p.id

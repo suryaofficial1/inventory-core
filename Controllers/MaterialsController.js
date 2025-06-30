@@ -21,6 +21,7 @@ materialsController.upsertMaterial = async (req, res) => {
 
         const reqObj = {
             productionId: req.body.productionId,
+            purchaseId: req.body.purchaseId,
             product: req.body.product,
             supplier: req.body.supplier,
             mqty: req.body.mqty,
@@ -32,7 +33,7 @@ materialsController.upsertMaterial = async (req, res) => {
             id: req.params.id ? req.params.id : null
         }
 
-        const isExists = await materialsModel.getMaterialsByProductionId(req.body.productionId, req.body.product, req.body.supplier);
+        const isExists = await materialsModel.getUsedMaterialsByProductOnProduction({productId: req.body.product, purchaseId: req.body.purchaseId, id: req.body.productionId });
         if (isExists.length) {
             return res.send(getErrorObject(400, 'Bad request', 'Material already exists'));
         }
@@ -75,7 +76,7 @@ materialsController.deleteMaterial = async (req, res) => {
 };
 materialsController.getAvailableProductQty = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['id', 'sId']);
+        const error = validationService.validateRequired(req.params, ['purchaseId','productId', 'sId']);
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }
@@ -89,7 +90,7 @@ materialsController.getAvailableProductQty = async (req, res) => {
 
 materialsController.getUsedMaterialsByProductOnProduction = async (req, res) => {
     try {
-        const error = validationService.validateRequired(req.params, ['productId', 'id']);
+        const error = validationService.validateRequired(req.params, ['productId', 'purchaseId', 'id']);
         if (error.length) {
             return res.send(getErrorObject(400, 'Bad request', error));
         }

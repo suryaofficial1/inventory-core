@@ -8,8 +8,8 @@ materialsRouter.get('/material-list/:productionId', materialsController.getMater
 materialsRouter.post('/material', materialsController.upsertMaterial);
 materialsRouter.post('/material/:id', materialsController.upsertMaterial);
 materialsRouter.delete('/material/:id', materialsController.deleteMaterial);
-materialsRouter.get('/:id/product/:sId/supplier', materialsController.getAvailableProductQty);
-materialsRouter.get('/product/:productId/production/:id', materialsController.getUsedMaterialsByProductOnProduction);
+materialsRouter.get('/purchase/:purchaseId/product/:productId/supplier/:sId', materialsController.getAvailableProductQty);
+materialsRouter.get('/product/:productId/production/:id/purchase/:purchaseId', materialsController.getUsedMaterialsByProductOnProduction);
 
 
 export default materialsRouter

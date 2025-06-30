@@ -8,7 +8,7 @@ const conditionEnum = filterService.condition;
 materialsModel.upsertMaterial = async (body) => {
     const connection = await db.getConnection();
     const updateSql = `UPDATE materials SET mqty =?, mPrice =? , rqty =?, rPrice =?, lqty =?, lPrice =?  WHERE id = ?`;
-    const insertSql = `INSERT INTO materials (productionId, product, s_id, mqty, mPrice, rqty, rPrice, lqty, lPrice,  created_on) VALUES (?, ?,?, ?, ?, ?, ?, ?, ?, NOW())`;
+    const insertSql = `INSERT INTO materials (productionId, purchaseId, product, s_id, mqty, mPrice, rqty, rPrice, lqty, lPrice,  created_on) VALUES (?,?,?,?,?,?,?,?,?,?,NOW())`;
 
     try {
         if (body.id) {
@@ -25,6 +25,7 @@ materialsModel.upsertMaterial = async (body) => {
         } else {
             await connection.query(insertSql, [
                 body.productionId,
+                body.purchaseId,
                 body.product,
                 body.supplier,
                 body.mqty,
@@ -92,9 +93,9 @@ materialsModel.deleteMaterial = async (id) => {
         connection.release();
     }
 };
-materialsModel.getAvailableProductQty = async ({ id, sId }) => {
+materialsModel.getAvailableProductQty = async ({ productId, sId, purchaseId }) => {
     const connection = await db.getConnection();
-    const returnQtySql = `SELECT pr.p_id AS productId, s.id supplierId, pr.qty,
+    const returnQtySql = `SELECT pr.id purchaseId, pr.p_id AS productId, s.id supplierId, pr.qty,
                                 IFNULL(prr.r_qty, 0) AS returnQty,
                                 IFNULL(SUM(CAST(m.mqty AS DECIMAL(10, 0))), 0) as mQty,
                                 IFNULL(prr.r_qty, 0) + IFNULL(SUM(CAST(m.mqty AS DECIMAL(10, 0))), 0)  AS usedQty,
@@ -102,23 +103,23 @@ materialsModel.getAvailableProductQty = async ({ id, sId }) => {
                             FROM purchase pr
                             JOIN supplier s ON pr.s_id = s.id 
                             left join product  p on pr.p_id = p.id and p.type ="purchase"
-                            left join purchase_return prr on p.id = prr.p_id and prr.s_id = s.id
-                            left join materials m on p.id = m.product and s.id= m.s_id
-                            where pr.p_id= ? and s.id=${sId} GROUP BY p.id`;
+                            left join purchase_return prr on pr.id = prr.p_id and p.id = prr.p_id and s.id = prr.s_id 
+                            left join materials m on pr.id= m.purchaseId and p.id = m.product and s.id= m.s_id 
+                            where pr.p_id= ? and s.id=? and pr.id= ? GROUP BY p.id`;
     try {
-        const [[result]] = await connection.query(returnQtySql, [id]);
+        const [[result]] = await connection.query(returnQtySql, [productId, sId, purchaseId]);
         return { availableQty: result.availableQty };
     } finally {
         connection.release();
     }
 };
 
-materialsModel.getUsedMaterialsByProductOnProduction = async ({ productId, id }) => {
+materialsModel.getUsedMaterialsByProductOnProduction = async ({ productId, purchaseId, id }) => {
     const connection = await db.getConnection();
-    const listSql = `select * from materials where productionId = ? and product = ?`;
+    const listSql = `select * from materials where purchaseId= ? and productionId = ? and product = ?`;
 
     try {
-        const [result] = await connection.query(listSql, [id, productId]);
+        const [result] = await connection.query(listSql, [id, purchaseId, productId]);
         return result
     } finally {
         connection.release();

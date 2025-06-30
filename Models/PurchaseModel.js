@@ -120,7 +120,7 @@ purchaseModel.getPurchaseDetailsByProduct = async ({ product, type }) => {
                                             JOIN supplier s ON p.s_id = s.id
                                             left join purchase_return prr on p.p_id = prr.p_id and s.id = p.s_id and p.id= prr.pr_id
                                             LEFT JOIN product prd on p.p_id = prd.id
-                                            left join materials m on p.p_id = m.product and s.id = m.s_id
+                                            left join materials m on p.id = m.purchaseId and p.p_id = m.product and s.id = m.s_id
                                             where prd.name like '%${product}%' group by 1,2,3,4,5,6,7 order by p.p_date asc`;
         const purchaseReturnListSql = `select JSON_OBJECT('id', p.id, 'name', p.name) AS product, JSON_OBJECT('id', s.id, 'name', s.name) AS supplier
                                             from purchase_return prr 
@@ -136,21 +136,16 @@ purchaseModel.getPurchaseDetailsByProduct = async ({ product, type }) => {
     }
 };
 
-purchaseModel.getPurchaseDetailsByProductId = async ({ id, sId, type }) => {
+purchaseModel.getPurchaseDetailsByProductId = async ({ purchaseId, productId, sId }) => {
     const connection = await db.getConnection();
     try {
-        const purchaseListSql = `SELECT p.id  FROM purchase p
-                                            LEFT JOIN product prd on p.p_id = prd.id
-                                            JOIN supplier s ON p.s_id = s.id
-                                            where prd.id = ${id} and p.s_id = ${sId}`;
         const purchaseReturnListSql = `select prr.id
                                             from purchase_return prr 
                                                 left join purchase pr on prr.pr_id = pr.id
                                                 left join product p on prr.p_id = p.id and type ="purchase"
                                                 JOIN supplier s ON prr.s_id = s.id
-                                                    where p.id = ${id} and prr.s_id = ${sId}`;
-        const listSql = type == "purchase" ? purchaseListSql : purchaseReturnListSql;
-        const [rows] = await connection.query(listSql);
+                                                    where p.id = ${productId} and pr_id=${purchaseId} and prr.s_id = ${sId}`;
+        const [rows] = await connection.query(purchaseReturnListSql);
         return rows;
     } finally {
         connection.release();
